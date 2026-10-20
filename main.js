@@ -155,60 +155,106 @@
     }).observe(cv);
   })();
 
-  /* ---------- Cómo funciona: plano + recorrido con el scroll ---------- */
-  var VENUES = [
-    { label: ['Mesa 1', 'Mesa 2', 'Mesa 3'], shape: 'round' },
-    { label: ['Oficina 1', 'Oficina 2', 'Oficina 3'], shape: 'desk' },
-    { label: ['Salón 1', 'Salón 2', 'Salón 3'], shape: 'room' }
-  ];
-  var PTS = [[330, 140], [560, 140], [690, 380]], LEN = [360, 830, 1200];
-  var TARGET = [[330, 70], [560, 70], [690, 455]], EXTRA = [[190, 120], [190, 400], [445, 400], [445, 120], [690, 120], [560, 400]];
-  var plan = $('#plan'), route = $('#route'), bot = $('#bot'), steps = $$('.step'), routeLen = 0, venue = 0;
-  var SVGNS = 'http://www.w3.org/2000/svg';
-  function svg(tag, attrs, txt) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (txt) e.textContent = txt; return e; }
-  function shape(g, x, y, kind, big) {
-    if (kind === 'round') g.appendChild(svg('circle', { cx: x, cy: y, r: big ? 36 : 30 }));
-    else if (kind === 'desk') g.appendChild(svg('rect', { x: x - 48, y: y - 26, width: 96, height: 52, rx: 10 }));
-    else g.appendChild(svg('rect', { x: x - 62, y: y - 44, width: 124, height: 88, rx: 14 }));
+  /* ---------- Anatomía: el modelo original se arma con el scroll ---------- */
+  (function anatomy() {
+    var sec = $('#anatomia'), cv = $('#anatCv'); if (!sec || !cv || !window.JeevesArt) return;
+    var art = window.JeevesArt.create(cv), g = cv.getContext('2d'), items = $$('.anat-list li', sec), bar = $('.anat-bar i', sec);
+    var GROUP = [0, 1, 2, 2, 3, 3, 4, 5], W = 0, H = 0, target = 0, cur = -1, vis = false, raf = 0;
+    function size() {
+      var r = cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 1.5); if (!r.width) return;
+      cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); W = cv.width; H = cv.height;
+      art.size(W, H, Math.max(.6, Math.min(W, H * 1.6) / 1100)); art.cloud(W < 900 ? 1400 : 2200);
+    }
+    function prog() {
+      var r = sec.getBoundingClientRect(), vh = window.innerHeight;
+      return reduce ? 1 : Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - vh)));
+    }
+    function draw() {
+      if (!W) return;
+      var u = .1 + cur * 3.55, wide = W > H * 1.1;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+      /* en pantallas anchas el robot va a la derecha; en celular, al centro */
+      var k2 = wide ? .8 : .92; g.save(); g.translate(W * (wide ? .66 : .5), H * (wide ? .54 : .47)); g.scale(k2, k2); g.translate(-W / 2, -H / 2);
+      var done = art.holo(u); g.restore();
+      var k = Math.min(GROUP.length - 1, Math.max(0, done < GROUP.length ? done : GROUP.length - 1)), on = GROUP[k];
+      if (u > 3.25) on = 5;
+      items.forEach(function (li, i) { li.classList.toggle('on', i === on); li.classList.toggle('done', i < on); });
+      if (bar) bar.style.transform = 'scaleX(' + cur.toFixed(3) + ')';
+    }
+    function loop() {
+      target = prog(); if (cur < 0 || reduce) cur = target; else cur += (target - cur) * .12;
+      draw(); raf = vis && !reduce && Math.abs(target - cur) > 2e-4 ? requestAnimationFrame(loop) : 0;
+    }
+    window.addEventListener('scroll', function () { if (vis && !raf && !reduce) raf = requestAnimationFrame(loop); }, { passive: true });
+    size(); target = prog(); cur = target; draw();
+    window.addEventListener('resize', function () { size(); draw(); });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) {
+      vis = e[0].isIntersecting; if (vis && !raf && !reduce) raf = requestAnimationFrame(loop);
+    }).observe(sec);
+  })();
+
+  /* ---------- Cómo funciona: diorama del local + recorrido con el scroll ---------- */
+  var how = { cv: $('#plan'), p: 0, sp: -1, place: 0, intro0: -99, vis: false, raf: 0, seen: false };
+  var HOW_STOPS = [[3.2, 2.0], [5.0, 3.4], [6.8, 5.55]], HOW_TGT = [[3.2, 3.4], [6.8, 3.4], [6.8, 7.0]], HOW_DEST = [0, 1, 3];
+  if (how.cv && window.JeevesArt) {
+    how.art = window.JeevesArt.create(how.cv); how.cx = how.cv.getContext('2d'); how.txt = $('#planTxt');
+    how.path = how.art.makePath([[1.2, 2.0], [3.2, 2.0], [5.0, 2.0], [5.0, 3.4], [5.0, 5.55], [6.8, 5.55]]);
+    how.ss = HOW_STOPS.map(function (q) { return how.art.stopAt(how.path, q); });
   }
-  function buildPlan() {
-    if (!plan) return;
-    var spots = $('.spots', plan), pts = $('.pts', plan), v = VENUES[venue];
-    spots.textContent = ''; pts.textContent = '';
-    EXTRA.forEach(function (p) { shape(spots, p[0], p[1], v.shape); });
-    TARGET.forEach(function (p, i) {
-      shape(spots, p[0], p[1], v.shape, true);
-      spots.appendChild(svg('text', { x: p[0], y: p[1] + 5 }, v.label[i]));
-    });
-    PTS.forEach(function (p, i) {
-      pts.appendChild(svg('circle', { cx: p[0], cy: p[1], r: 17 }));
-      pts.appendChild(svg('text', { x: p[0], y: p[1] }, 'ABC'[i]));
-    });
-    plan.setAttribute('aria-label', 'Plano con la ruta de Jeeves desde la base hasta ' + v.label.join(', '));
-    howProgress(true);
+  var howEase = function (x) { x = Math.max(0, Math.min(1, x)); return x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+  /* el scroll se reparte en tramos: base → A, pausa, A → B, pausa, B → C, pausa */
+  function howS(p) {
+    var ss = how.ss, K = [[0, .26, 0, ss[0]], [.34, .6, ss[0], ss[1]], [.68, .92, ss[1], ss[2]]];
+    for (var k = K.length - 1; k >= 0; k--) { var q = K[k]; if (p >= q[0]) return q[2] + (q[3] - q[2]) * howEase((p - q[0]) / (q[1] - q[0])); }
+    return 0;
   }
+  function howSize() {
+    if (!how.art) return;
+    var r = how.cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2); if (!r.width) return;
+    how.cv.width = Math.round(r.width * d); how.cv.height = Math.round(r.height * d);
+    how.W = how.cv.width; how.H = how.cv.height; how.art.size(how.W, how.H, Math.max(.7, how.W / 1100));
+  }
+  function howDraw(now) {
+    if (!how.art || !how.W) return;
+    var t = (now || performance.now()) / 1000;
+    if (how.sp < 0 || reduce) how.sp = how.p; else how.sp += (how.p - how.sp) * .14;
+    var s = howS(how.sp), R = how.art.along(how.path, s), names = how.art.NAMES[how.place];
+    var done = how.ss.map(function (q) { return s >= q - .004; }), next = done.indexOf(false);
+    var cx = how.cx; cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, how.W, how.H);
+    how.art.diorama({ place: how.place, fit: [how.W * .03, how.H * .1, how.W * .94, how.H * .86], t: t, intro: reduce ? 99 : t - how.intro0, robot: R, path: how.path, prog: s, onDark: true,
+      dest: HOW_DEST, served: HOW_DEST.filter(function (d, k) { return done[k]; }),
+      pins: HOW_TGT.map(function (q, k) { return { i: q[0], j: q[1], label: 'ABC'[k], name: k === next ? names[k] : '', done: done[k], active: k === next }; }) });
+    var msg = s < .01 ? 'En la base · listo' : next < 0 ? 'Entregado en ' + names[2] : (next > 0 && s - how.ss[next - 1] < .02 ? 'Entregado en ' + names[next - 1] : 'En camino a ' + names[next]);
+    if (how.txt && how.txt.textContent !== msg) how.txt.textContent = msg;
+  }
+  function howLoop(now) { howDraw(now); how.raf = how.vis && !reduce ? requestAnimationFrame(howLoop) : 0; }
   function howProgress() {
-    if (!plan) return;
-    if (!routeLen) { routeLen = route.getTotalLength(); route.style.strokeDasharray = routeLen; }
+    if (!how.art) return;
     var list = $('.steps'), r = list.getBoundingClientRect(), vh = window.innerHeight;
-    var p = reduce ? 1 : Math.max(0, Math.min(1, (vh * .62 - r.top) / (r.height - vh * .25)));
-    var d = routeLen * p;
-    route.style.strokeDashoffset = (routeLen - d).toFixed(1);
-    var pt = route.getPointAtLength(Math.max(.01, d));
-    bot.setAttribute('transform', 'translate(' + pt.x.toFixed(1) + ',' + pt.y.toFixed(1) + ')');
-    var circles = $$('.pts circle', plan);
-    LEN.forEach(function (L, i) { if (circles[i]) circles[i].classList.toggle('done', d >= L - 2); });
-    var idx = Math.min(2, Math.floor(p * 3 + .15));
-    steps.forEach(function (s, i) { s.classList.toggle('on', i === idx); });
+    how.p = reduce ? 1 : Math.max(0, Math.min(1, (vh * .62 - r.top) / (r.height - vh * .25)));
+    var idx = Math.min(2, Math.floor(how.p * 3 + .15));
+    steps.forEach(function (st, i) { st.classList.toggle('on', i === idx); });
+    if (!how.raf) howDraw();
+  }
+  var steps = $$('.step');
+  if (how.art) {
+    howSize(); howProgress();
+    window.addEventListener('resize', function () { howSize(); howDraw(); });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) {
+      how.vis = e[0].isIntersecting;
+      if (how.vis && !how.seen) { how.seen = true; how.intro0 = performance.now() / 1000; }
+      if (how.vis && !how.raf && !reduce) how.raf = requestAnimationFrame(howLoop);
+    }, { threshold: .05 }).observe(how.cv);
+    else { how.vis = true; how.raf = requestAnimationFrame(howLoop); }
   }
   $$('[data-venue]').forEach(function (b) {
     b.addEventListener('click', function () {
-      venue = +b.getAttribute('data-venue');
+      how.place = +b.getAttribute('data-venue'); how.intro0 = performance.now() / 1000;
       $$('[data-venue]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
-      buildPlan();
+      if (how.cv) how.cv.setAttribute('aria-label', 'Diorama de ' + ['un restaurante', 'una oficina', 'una escuela'][how.place] + ' con la ruta de Jeeves desde su base hasta ' + how.art.NAMES[how.place].join(', '));
+      howDraw();
     });
   });
-  buildPlan();
 
   /* ---------- Vista previa de la app ---------- */
   (function phone() {

@@ -230,6 +230,28 @@
   </section>
 
   <!-- PRODUCTO / BENTO -->
+  <!-- ANATOMÍA: Jeeves se arma con el scroll -->
+  <section id="anatomia" class="anat" data-theme="dark" aria-labelledby="anat-t">
+    <div class="anat-pin">
+      <canvas id="anatCv" aria-hidden="true"></canvas>
+      <div class="anat-copy wrap">
+        <div class="anat-head">
+          <p class="anat-eye">Anatomía</p>
+          <h2 id="anat-t">Hecho pieza<br>por pieza.</h2>
+        </div>
+        <ol class="anat-list">
+          <li data-k="0"><h3>Base con llantas</h3><p>Llantas y ruedas locas para moverse suave entre mesas.</p></li>
+          <li data-k="1"><h3>Estructura con luz</h3><p>Postes firmes con tiras de luz que cambian de color según lo que hace.</p></li>
+          <li data-k="2"><h3>Dos charolas</h3><p>La de abajo para lo pesado, la de arriba para lo ligero.</p></li>
+          <li data-k="3"><h3>Cabeza</h3><p>Aquí van la cámara y los sensores que detectan personas y objetos.</p></li>
+          <li data-k="4"><h3>Pantalla con ojos</h3><p>Sus ojos muestran si está listo, en camino o si algo le estorba.</p></li>
+          <li data-k="5"><h3>Luces de estado</h3><p>Avisan a todos, desde lejos, qué está haciendo.</p></li>
+        </ol>
+        <div class="anat-bar" aria-hidden="true"><i></i></div>
+      </div>
+    </div>
+  </section>
+
   <section id="producto" class="section" data-theme="light" aria-labelledby="prod-t">
     <div class="wrap">
       <header class="sec-head rv">
@@ -282,18 +304,10 @@
       </div>
       <div class="how">
         <div class="how-visual">
-          <svg id="plan" viewBox="0 0 800 520" role="img" aria-label="Plano del local con la ruta de Jeeves desde la base hasta los puntos A, B y C">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="rgba(255,255,255,.05)"/></pattern>
-            </defs>
-            <rect x="1" y="1" width="798" height="518" rx="28" fill="url(#grid)" stroke="rgba(255,255,255,.1)"/>
-            <g class="spots"></g>
-            <path class="route-bg" d="M90 260 H330 M330 260 V140 M330 260 H560 M560 260 V140 M560 260 H690 M690 260 V380"/>
-            <path class="route" id="route" d="M90 260 H330 V140 V260 H560 V140 V260 H690 V380"/>
-            <g class="base"><circle cx="90" cy="260" r="26"/><path d="M92 247l-10 15h8l-2 11 10-15h-8z"/></g>
-            <g class="pts"></g>
-            <g id="bot" class="bot"><circle r="20" class="bot-halo"/><rect x="-13" y="-10" width="26" height="20" rx="8"/><path d="M-6 3q2.5-4.5 5 0M2 3q2.5-4.5 5 0"/></g>
-          </svg>
+          <div class="plan3d">
+            <canvas id="plan" role="img" aria-label="Diorama de un restaurante con la ruta de Jeeves desde su base hasta Mesa 1, Mesa 2 y Mesa 3"></canvas>
+            <p class="plan-status" aria-live="polite"><span class="pd" aria-hidden="true"></span><span id="planTxt">En la base · listo</span></p>
+          </div>
         </div>
         <ol class="steps">
           <li class="step" data-step="0"><span class="n">1</span><h3>Eliges el destino.</h3><p>Desde la app tocas Punto A, B o C. Jeeves sale de su base.</p></li>
@@ -480,6 +494,7 @@
   </div>
 </footer>
 
+<script src="art.js" defer></script>
 <script src="main.js" defer></script>
 <script src="film.js" defer></script>
 <script src="reel.js" defer></script>
