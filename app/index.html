@@ -111,7 +111,7 @@ main{padding:0 16px calc(120px + env(safe-area-inset-bottom,0px))}
 
 /* Mapa */
 .map{position:relative;border-radius:20px;overflow:hidden;background:radial-gradient(80% 80% at 50% 40%,rgba(37,99,235,.14),transparent 70%),#0C111C;box-shadow:inset 0 0 0 1px var(--line)}
-.map svg{display:block;width:100%;height:auto}
+.map canvas{display:block;width:100%;aspect-ratio:16/10;height:auto}#map2{aspect-ratio:5/4}
 .eta-chip{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;background:rgba(11,15,23,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px var(--line-2);font-size:.78rem;font-weight:500}
 .eta-chip b{font-variant-numeric:tabular-nums}
 .map .eta-chip svg{width:14px;height:14px;flex:none}
@@ -332,7 +332,7 @@ html.intro .shell{visibility:hidden}
 
       <div class="card">
         <div class="card-h"><h2>Recorrido</h2><span>En vivo</span></div>
-        <div class="map"><svg id="map1" viewBox="0 0 360 200" role="img" aria-label="Mapa con la posición de Jeeves"></svg><div class="eta-chip"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:#45EDD1;stroke-width:2" aria-hidden="true"><use href="#i-route"/></svg><span id="eta1">En la base</span></div></div>
+        <div class="map"><canvas id="map1" role="img" aria-label="Diorama del restaurante con la posición de Jeeves"></canvas><div class="eta-chip"><svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:#45EDD1;stroke-width:2" aria-hidden="true"><use href="#i-route"/></svg><span id="eta1">En la base</span></div></div>
       </div>
 
       <div class="stats">
@@ -345,7 +345,7 @@ html.intro .shell{visibility:hidden}
     <!-- MAPA -->
     <section class="view" id="v-map" role="tabpanel" aria-labelledby="t-map">
       <div class="vh"><h1>Ruta</h1><p>La línea guía de tu local y dónde está Jeeves ahora.</p></div>
-      <div class="card" style="padding:12px"><div class="map"><svg id="map2" viewBox="0 0 360 200" role="img" aria-label="Mapa grande con la ruta de Jeeves"></svg><div class="eta-chip"><span id="eta2">En la base</span></div></div></div>
+      <div class="card" style="padding:12px"><div class="map"><canvas id="map2" role="img" aria-label="Diorama grande del restaurante con la ruta de Jeeves"></canvas><div class="eta-chip"><span id="eta2">En la base</span></div></div></div>
       <div class="card">
         <div class="next"><div><p class="eyebrow">Siguiente parada</p><h3 id="nxName">Base</h3></div><p class="big" id="nxEta">—</p></div>
         <div class="prog"><b id="prog"></b></div>
@@ -409,6 +409,7 @@ html.intro .shell{visibility:hidden}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../art.js"></script>
 <script>
 /* Modelo 3D original de Jeeves */
 function makeJeeves(scene){
@@ -536,8 +537,8 @@ function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
 /* ---------- Datos del local ---------- */
 var NM=['Mesa 1','Mesa 2','Mesa 3'],IT=['Pasta','Hamburguesa','Bebida'],ICO=['i-plate','i-burger','i-drink'],PC=['#7AA7FF','#F5B84B','#B79CFF'],L3='ABC';
-var NP=[[-5.4,0],[-3.2,0],[-3.2,-.8],[0,0],[0,-.8],[3.2,0],[3.2,.8]],ED=[[0,1],[1,3],[3,5],[1,2],[3,4],[5,6]],SN=[2,4,6];
-var TB=[[-3.2,-1.7],[0,-1.7],[3.2,1.7],[-1.6,-1.7],[1.6,-1.7],[-3.2,1.7],[0,1.7],[1.6,1.7]];
+/* coordenadas del diorama en metros: base → Mesa 1 (A) → cruce → Mesa 2 (B) → cruce → Mesa 3 (C) */
+var NP=[[1.2,2.0],[3.2,2.0],[5.0,2.0],[5.0,3.4],[5.0,5.55],[6.8,5.55]],ED=[[0,1],[1,2],[2,3],[3,4],[4,5]],SN=[1,3,5];
 var AD=NP.map(function(){return[]});ED.forEach(function(e){AD[e[0]].push(e[1]);AD[e[1]].push(e[0])});
 function path(a,b){var pr={},q=[a],u;pr[a]=-1;while(q.length){u=q.shift();if(u==b)break;AD[u].forEach(function(v){if(pr[v]===undefined){pr[v]=u;q.push(v)}})}var r=[];for(u=b;u!=a;u=pr[u])r.unshift(u);return r}
 function dN(a,b){return Math.hypot(NP[a][0]-NP[b][0],NP[a][1]-NP[b][1])}
@@ -546,7 +547,7 @@ function mmss(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+('0'+s%
 
 /* ---------- Simulación ---------- */
 var VMAX=.75,ACC=.55,VTURN=.28,SPEED=.62,RATE=9;/* m/s: paso de un mesero tranquilo */
-var S={a:0,b:0,bk:-1,x:-5.4,z:0,pl:[],dw:0,mk:-1,leg:0,mv:0,hold:0,lr:0,tot:1,h:Math.PI/2,hv:Math.PI/2,v:0,legStart:0},Q=[],pct=82,ch=false,clk=13*3600+12*60,dist=1.38,hist=[],hacc=0,TN=18,dirty=1;
+var S={a:0,b:0,bk:-1,x:1.2,z:2.0,pl:[],dw:0,mk:-1,leg:0,mv:0,hold:0,lr:0,tot:1,h:Math.PI/2,hv:Math.PI/2,v:0,legStart:0},Q=[],pct=82,ch=false,clk=13*3600+12*60,dist=1.38,hist=[],hacc=0,TN=18,dirty=1;
 for(var q=0;q<12;q++)hist.push(Math.min(100,100-q*1.6));
 var HOURS=[[9,1],[10,2],[11,2],[12,3],[13,4],[14,0]];
 var DL=[[1,46],[0,52],[2,61],[1,44],[0,49],[1,47],[2,55],[0,51]].map(function(a,j){return{t:hm(clk-(j+1)*13*60),k:a[0],d:a[1]}});
@@ -590,33 +591,25 @@ function title(){if(S.hold)return['Detenido','Toca reanudar para continuar'];if(
   return S.a==0?['En la base','Listo para su siguiente entrega']:['En espera','Esperando su siguiente orden']}
 function hrs(){if(ch)return Math.ceil((100-pct)/.6*12/60)+' min para carga';var h=pct/RATE,a=Math.floor(h);return a+' h '+('0'+Math.round((h-a)*60)).slice(-2)+' min'}
 
-/* ---------- Mapa (SVG) ---------- */
-function mx(x){return 34+(x+5.4)*33.5}function mz(z){return 100+z*44}
-var NS='http://www.w3.org/2000/svg';
-function el(t,a,txt){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;return e}
-var maps=[];
-function buildMap(svg,big){
-  svg.appendChild(el('rect',{x:.5,y:.5,width:359,height:199,rx:18,fill:'none',stroke:'rgba(255,255,255,.06)'}));
-  TB.forEach(function(t,i){svg.appendChild(el('circle',{cx:mx(t[0]),cy:mz(t[1]),r:13,'class':'tbl'}));if(i<3)svg.appendChild(el('text',{x:mx(t[0]),y:mz(t[1])+(t[1]<0?-18:24),'class':'tbl-t'},NM[i]))});
-  var d=ED.map(function(e){return'M'+mx(NP[e[0]][0])+' '+mz(NP[e[0]][1])+'L'+mx(NP[e[1]][0])+' '+mz(NP[e[1]][1])}).join('');
-  svg.appendChild(el('path',{d:d,'class':'r-bg'}));svg.appendChild(el('path',{d:d,'class':'r-dash'}));
-  var live=el('path',{d:'','class':'r-live'});svg.appendChild(live);
-  var bx=mx(-5.4),by=mz(0);svg.appendChild(el('circle',{cx:bx,cy:by,r:13,fill:'rgba(69,237,209,.1)',stroke:'#45EDD1','stroke-dasharray':'3 3'}));
-  var bolt=el('path',{d:'M'+(bx+1)+' '+(by-7)+'l-5 8h4l-1 6 5-8h-4z',fill:'#45EDD1'});svg.appendChild(bolt);
-  var pts=[],rips=[];SN.forEach(function(n,k){var x=mx(NP[n][0]),y=mz(NP[n][1]);var r=el('circle',{cx:x,cy:y,r:9,'class':'ripple'});svg.appendChild(r);rips.push(r);var c=el('circle',{cx:x,cy:y,r:9,fill:PC[k],'class':'pt'});svg.appendChild(c);pts.push(c);svg.appendChild(el('text',{x:x,y:y,'class':'pt-t'},L3[k]))});
-  var g=el('g',{'class':'botm'});g.appendChild(el('circle',{r:11,'class':'halo'}));g.appendChild(el('circle',{r:6.5,fill:'#fff',stroke:'#2563EB','stroke-width':3}));
-  var arrow=el('path',{d:'M0 -14 L4 -9 L-4 -9 Z',fill:'#45EDD1'});g.appendChild(arrow);svg.appendChild(g);
-  maps.push({live:live,pts:pts,rips:rips,bot:g,arrow:arrow});
-}
-function ripple(k){maps.forEach(function(m){var r=m.rips[k];r.classList.remove('go');void r.getBBox();r.classList.add('go')})}
+/* ---------- Mapa: diorama del local (art.js) ---------- */
+var maps=[],served={},rings=[],LINES=ED.map(function(e){return[NP[e[0]],NP[e[1]]]}),TGT=[[3.2,3.4],[6.8,3.4],[6.8,7.0]],DEST=[0,1,3];
+function buildMap(cv,big){if(!window.JeevesArt||!cv)return;maps.push({cv:cv,art:window.JeevesArt.create(cv),big:big,W:0,H:0})}
+function sizeMaps(){maps.forEach(function(m){var r=m.cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);if(!r.width)return;var w=Math.round(r.width*d),h=Math.round(r.height*d);if(w!==m.W||h!==m.H){m.cv.width=w;m.cv.height=h;m.W=w;m.H=h;m.art.size(w,h,Math.max(.55,w/900))}})}
+function ripple(k){var t=performance.now()/1000;rings.push({k:k,t0:t});served[k]=t}
 function drawMaps(dt){
   var dh=Math.atan2(Math.sin(S.h-S.hv),Math.cos(S.h-S.hv));S.hv+=dh*Math.min(1,(dt||.2)*10);
-  var d='',moving=S.a!=S.b;
-  if(moving){d='M'+mx(S.x)+' '+mz(S.z)+'L'+mx(NP[S.b][0])+' '+mz(NP[S.b][1]);S.pl.forEach(function(e){d+='L'+mx(NP[e.n][0])+' '+mz(NP[e.n][1])})}
-  var deg=(Math.atan2(Math.sin(S.hv),Math.cos(S.hv))*180/Math.PI);
-  maps.forEach(function(m){m.live.setAttribute('d',d);m.bot.setAttribute('transform','translate('+mx(S.x).toFixed(1)+','+mz(S.z).toFixed(1)+')');
-    m.arrow.setAttribute('transform','rotate('+(180-deg).toFixed(0)+')');m.arrow.style.opacity=moving?1:0;
-    m.pts.forEach(function(c,k){var act=S.mk==k||Q.indexOf(k)>=0;c.setAttribute('stroke',act?'#fff':'none');c.setAttribute('stroke-width',act?2.5:0)})});
+  var now=performance.now()/1000,live=null;
+  if(S.a!=S.b){live=[[S.x,S.z],NP[S.b]];S.pl.forEach(function(e){live.push(NP[e.n])})}
+  rings=rings.filter(function(r){return now-r.t0<1.2});
+  var sv=[];DEST.forEach(function(d,k){if(served[k]&&now-served[k]<9)sv.push(d)});
+  sizeMaps();
+  maps.forEach(function(m){
+    if(!m.W||!m.cv.offsetParent)return;var g=m.cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,m.W,m.H);
+    var rg=rings[0];
+    m.art.diorama({place:0,fit:[0,m.H*.03,m.W,m.H*.97],zoom:m.big?1.2:1.16,t:now,robot:[S.x,S.z,Math.PI/2-S.hv],lines:LINES,live:live,onDark:true,dest:DEST,served:sv,pad:NP[0],
+      ring:rg?{i:NP[SN[rg.k]][0],j:NP[SN[rg.k]][1],k:(now-rg.t0)/1.2}:null,
+      pins:TGT.map(function(q,k){var act=S.mk==k||Q.indexOf(k)>=0;return{i:q[0],j:q[1],label:L3[k],col:PC[k],active:act,name:S.mk==k&&m.big?NM[k]:'',done:!!(served[k]&&now-served[k]<2.5)}})});
+  });
 }
 
 /* ---------- Interfaz ---------- */
@@ -685,7 +678,6 @@ tabs.forEach(function(t,i){t.addEventListener('click',function(){selectTab(i)});
 /* ---------- 3D ---------- */
 var cv=$('#cv'),hero=$('#hero'),renderer=null,J,scene,cam,az=.55,elv=.22,dist3=3.3,auto=!reduce,idle=0,ptr={},cs='',heroVis=true;
 try{if(window.THREE)renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true})}catch(e){renderer=null}
-if(!renderer){$('.hero-fallback').textContent='Tu dispositivo no puede mostrar el modelo 3D'}
 if(renderer){
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0,0);
   scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(34,1,.1,40);
@@ -712,6 +704,23 @@ if(renderer){
   if('IntersectionObserver' in window)new IntersectionObserver(function(e){heroVis=e[0].isIntersecting},{root:null}).observe(cv);
 }
 var tAz=null,tEl=null;
+/* Sin WebGL: Jeeves en 2D con art.js; también se gira con el dedo */
+var fb=null;
+if(!renderer&&window.JeevesArt){fb={a:window.JeevesArt.create(cv),W:0,H:0};fb.g=cv.getContext('2d');if(!fb.g)fb=null}
+if(fb){
+  $('.hero-fallback').textContent='';hero.classList.add('ready');
+  cv.addEventListener('pointerdown',function(e){try{cv.setPointerCapture(e.pointerId)}catch(_){}ptr[e.pointerId]=[e.clientX,e.clientY];auto=false;idle=0;clearViews()});
+  cv.addEventListener('pointermove',function(e){var p=ptr[e.pointerId];if(!p)return;az-=(e.clientX-p[0])*.01;p[0]=e.clientX;p[1]=e.clientY});
+  ['pointerup','pointercancel'].forEach(function(n){cv.addEventListener(n,function(e){delete ptr[e.pointerId]})});
+  cv.addEventListener('keydown',function(e){if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();az+=(e.key==='ArrowLeft'?.3:-.3);auto=false;idle=0;clearViews()}});
+  $$('.views [data-v]').forEach(function(b){b.addEventListener('click',function(){var v=+b.getAttribute('data-v');auto=false;idle=0;tAz=[0,Math.PI/2,Math.PI,az][v];clearViews();b.setAttribute('aria-pressed','true')})});
+  if('IntersectionObserver' in window)new IntersectionObserver(function(e){heroVis=e[0].isIntersecting},{root:null}).observe(cv);
+}
+function fbDraw(){
+  var r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);if(!r.width)return;var w=Math.round(r.width*d),h=Math.round(r.height*d);
+  if(w!==fb.W||h!==fb.H){cv.width=w;cv.height=h;fb.W=w;fb.H=h;fb.a.size(w,h,Math.max(.6,Math.min(w,h*1.6)/1100))}
+  var g=fb.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,w,h);g.save();g.translate(w/2,h*.53);g.scale(.8,.8);g.translate(-w/2,-h/2);fb.a.holo(3.6,Math.PI+az);g.restore();
+}
 function clearViews(){$$('.views [data-v]').forEach(function(b){b.setAttribute('aria-pressed','false')})}
 function size(){if(!renderer)return;var w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
 if(window.ResizeObserver&&renderer)new ResizeObserver(size).observe(cv);addEventListener('resize',size);
@@ -728,6 +737,10 @@ function loop(now){
     else if(auto)az+=dt*.35;else if(!Object.keys(ptr).length){idle+=dt;if(idle>5&&!reduce)auto=true}
     J.bot.position.y=reduce?0:Math.sin(T*1.4)*.008;
     cam.position.set(Math.sin(az)*Math.cos(elv)*dist3,.62+Math.sin(elv)*dist3,Math.cos(az)*Math.cos(elv)*dist3);cam.lookAt(0,.6,0);renderer.render(scene,cam);
+  }else if(fb&&tab==0&&heroVis&&!document.hidden&&!doc.classList.contains('intro')){
+    if(tAz!==null){az+=(tAz-az)*Math.min(1,dt*5);if(Math.abs(tAz-az)<.002)tAz=null}
+    else if(auto)az+=dt*.35;else if(!Object.keys(ptr).length){idle+=dt;if(idle>5&&!reduce)auto=true}
+    fbDraw();
   }
   requestAnimationFrame(loop);
 }

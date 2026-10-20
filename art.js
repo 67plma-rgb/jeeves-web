@@ -192,8 +192,8 @@
         });
       });
     }
-    function holo(u) {
-      var f = cloudScale() * (H > W ? .9 : .84), ox = W / 2, oy = H * (H > W ? .5 : .47), rot = Math.PI - .5 - 2.4 * (1 - eo(seg(u, 0, 3.3))) + u * .1;
+    function holo(u, rotOv) {
+      var f = cloudScale() * (H > W ? .9 : .84), ox = W / 2, oy = H * (H > W ? .5 : .47), rot = rotOv != null ? rotOv : Math.PI - .5 - 2.4 * (1 - eo(seg(u, 0, 3.3))) + u * .1;
       var P = function (p) { var k = 3.4 / (3.4 + p[2]); return [ox + p[0] * f * k, oy - p[1] * f * k, k, f * k]; };
       var flash = u > 3.2 ? 1 - eo(seg(u, 3.2, 3.9)) : 0, done = 0, i, list = [];
       for (i = 0; i < PT0.length; i++) if (u >= PT0[i] + PD) done++;
@@ -429,6 +429,15 @@
           var qe = iso(R[0], R[1], .01); cx.lineTo(qe[0], qe[1]); cx.stroke(); cx.shadowBlur = 0;
         }
       }
+      if (o.lines) {
+        cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.setLineDash([4 * S, 6 * S]); cx.strokeStyle = 'rgba(15,23,42,.22)'; cx.lineWidth = 1.6 * S; cx.beginPath();
+        o.lines.forEach(function (ln) { ln.forEach(function (pt, n) { var q = iso(pt[0], pt[1], .01); if (n) cx.lineTo(q[0], q[1]); else cx.moveTo(q[0], q[1]); }); }); cx.stroke(); cx.setLineDash([]);
+      }
+      if (o.live && o.live.length > 1) {
+        cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.shadowColor = 'rgba(69,237,209,.8)'; cx.shadowBlur = 12 * S; cx.strokeStyle = MINT; cx.lineWidth = 4 * S; cx.beginPath();
+        o.live.forEach(function (pt, n) { var q = iso(pt[0], pt[1], .01); if (n) cx.lineTo(q[0], q[1]); else cx.moveTo(q[0], q[1]); }); cx.stroke(); cx.shadowBlur = 0;
+        var le = o.live[o.live.length - 1], lq = iso(le[0], le[1], .01); cx.fillStyle = MINT; cx.beginPath(); cx.ellipse(lq[0], lq[1], 5 * S, 2.5 * S, 0, 0, 7); cx.fill();
+      }
       if (o.ring) {
         var rp = iso(o.ring.i, o.ring.j, 0), rk = o.ring.k;
         cx.save(); cx.translate(rp[0], rp[1]); cx.scale(1, .5); cx.strokeStyle = 'rgba(69,237,209,' + (1 - rk) + ')'; cx.lineWidth = 3 * S;
@@ -460,13 +469,14 @@
         cx.globalAlpha = mk; cx.strokeStyle = 'rgba(15,23,42,.18)'; cx.lineWidth = 1.2 * S; cx.setLineDash([2 * S, 3 * S]); cx.beginPath();
         var mb = iso(pn.i, pn.j, .82); cx.moveTo(mp[0], mp[1] + mr); cx.lineTo(mb[0], mb[1]); cx.stroke(); cx.setLineDash([]);
         cx.shadowColor = 'rgba(15,23,42,.25)'; cx.shadowBlur = 10 * S; cx.shadowOffsetY = 3 * S;
-        cx.fillStyle = pn.done ? MINT : pn.active ? '#2563EB' : '#0F172A'; cx.beginPath(); cx.arc(mp[0], mp[1], mr, 0, 7); cx.fill();
+        cx.fillStyle = pn.done ? MINT : pn.col || (pn.active ? '#2563EB' : '#0F172A'); cx.beginPath(); cx.arc(mp[0], mp[1], mr, 0, 7); cx.fill();
         cx.shadowBlur = 0; cx.shadowOffsetY = 0;
+        if (pn.col && pn.active && !pn.done) { cx.strokeStyle = '#FFFFFF'; cx.lineWidth = Math.max(1.5, mr * .16); cx.stroke(); }
         if (pn.done) {
           var ck = pn.doneK == null ? 1 : pn.doneK; cx.strokeStyle = '#0F172A'; cx.lineWidth = Math.max(1.6, mr * .2); cx.lineCap = 'round'; cx.beginPath();
           cx.moveTo(mp[0] - mr * .4, mp[1]); cx.lineTo(mp[0] - mr * .4 + mr * .3 * Math.min(1, ck * 2), mp[1] + mr * .3 * Math.min(1, ck * 2));
           if (ck > .5) cx.lineTo(mp[0] - mr * .1 + mr * .55 * (ck - .5) * 2, mp[1] + mr * .3 - mr * .65 * (ck - .5) * 2); cx.stroke();
-        } else { cx.font = '700 ' + Math.round(mr * 1.05) + 'px ' + FT; cx.fillStyle = pn.active ? '#FFFFFF' : MINT; cx.textAlign = 'center'; cx.fillText(pn.label, mp[0], mp[1] + mr * .37); cx.textAlign = 'left'; }
+        } else { cx.font = '700 ' + Math.round(mr * 1.05) + 'px ' + FT; cx.fillStyle = pn.col ? '#0B0F17' : pn.active ? '#FFFFFF' : MINT; cx.textAlign = 'center'; cx.fillText(pn.label, mp[0], mp[1] + mr * .37); cx.textAlign = 'left'; }
         if (pn.name) {
           cx.font = '600 ' + Math.round(Math.max(10 * S, RT.cw * .2)) + 'px ' + FT; var tw = cx.measureText(pn.name).width, ph = Math.max(18 * S, RT.cw * .34), px2 = mp[0] - tw / 2 - ph * .45, py2 = mp[1] - mr - ph - 6 * S;
           cx.fillStyle = 'rgba(255,255,255,.94)'; rrc(px2, py2, tw + ph * .9, ph, ph / 2); cx.fill(); cx.strokeStyle = 'rgba(15,23,42,.08)'; cx.lineWidth = 1; cx.stroke();

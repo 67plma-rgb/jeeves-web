@@ -512,3 +512,20 @@ html.intro,html.intro body{overflow:hidden}
   .anat-bar{width:auto}
 }
 @media (prefers-reduced-motion:reduce){.anat{height:auto}.anat-pin{position:relative;height:auto;min-height:100vh}}
+
+/* ---------- Tarjetas "en vivo" sobre la foto del inicio ---------- */
+.live-chip{position:absolute;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--r-pill);background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 1px 2px rgba(15,23,42,.06),0 18px 40px -16px rgba(15,23,42,.35),inset 0 0 0 1px rgba(255,255,255,.7);font:600 .86rem/1 var(--f-text);color:var(--ink);white-space:nowrap;animation:chipf 6s ease-in-out infinite}
+.lc-1{left:-34px;top:16%}
+.lc-2{right:-26px;bottom:13%;animation-delay:-3s;font-weight:500}
+.lc-2 b{font-weight:700}
+.live-chip .ld{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(69,237,209,.22)}
+.live-chip .lc-t{transition:opacity .35s var(--ease)}
+.live-chip .lc-t.out{opacity:0}
+.live-chip .lb{width:26px;height:13px;border-radius:4px;box-shadow:inset 0 0 0 1.5px rgba(15,23,42,.35);padding:2px;display:block;position:relative}
+.live-chip .lb::after{content:"";position:absolute;right:-4px;top:4px;width:2px;height:5px;border-radius:1px;background:rgba(15,23,42,.35)}
+.live-chip .lb i{display:block;height:100%;width:82%;border-radius:2px;background:var(--mint)}
+@keyframes chipf{50%{transform:translateY(-7px)}}
+html.js .live-chip{opacity:0;transition:opacity 1s var(--ease) .9s}
+html.ready .live-chip{opacity:1}
+@media (max-width:860px){.lc-1{left:-10px;top:36%;font-size:.8rem;padding:9px 13px}.lc-2{right:-10px;bottom:8%;font-size:.8rem;padding:9px 13px}}
+@media (prefers-reduced-motion:reduce){.live-chip{animation:none}}

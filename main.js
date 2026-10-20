@@ -155,6 +155,16 @@
     }).observe(cv);
   })();
 
+  /* ---------- Tarjeta "en vivo" del inicio ---------- */
+  (function liveChip() {
+    var t = $('.lc-1 .lc-t'), d = $('.lc-1 .ld'); if (!t || reduce) return;
+    var M = [['En la base · listo', '#45EDD1'], ['En camino a Mesa 4', '#4D8BFF'], ['Entregado en Mesa 4', '#45EDD1'], ['Regresando a la base', '#A3ADBF']], k = 1;
+    setInterval(function () {
+      if (document.hidden) return; k = (k + 1) % M.length; t.classList.add('out');
+      setTimeout(function () { t.textContent = M[k][0]; d.style.background = M[k][1]; t.classList.remove('out'); }, 350);
+    }, 2800);
+  })();
+
   /* ---------- Anatomía: el modelo original se arma con el scroll ---------- */
   (function anatomy() {
     var sec = $('#anatomia'), cv = $('#anatCv'); if (!sec || !cv || !window.JeevesArt) return;
