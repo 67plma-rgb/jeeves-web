@@ -8,6 +8,6 @@ Sitio de **Jeeves**, el robot autónomo de entregas para restaurantes, oficinas 
 - `assets/`: fotos del robot optimizadas (WebP + JPG).
 - `design-tokens.json`: colores, tipografía y espacios para importar en Figma (Tokens Studio).
 
-Publicado en Netlify: https://regal-melba-2c1e42.netlify.app/
+Publicado en GitHub Pages: https://67plma-rgb.github.io/jeeves-web/ (se actualiza solo con cada push a main)
 
 Es un sitio estático: no necesita instalar nada ni compilar. Para verlo en tu computadora basta con abrir `index.html`.

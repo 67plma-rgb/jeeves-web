@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://regal-melba-2c1e42.netlify.app/sitemap.xml
+Sitemap: https://67plma-rgb.github.io/jeeves-web/sitemap.xml
