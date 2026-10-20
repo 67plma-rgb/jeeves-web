@@ -1,0 +1,153 @@
+{
+  "jeeves": {
+    "color": {
+      "porcelain": {
+        "value": "#EEEDEC",
+        "type": "color",
+        "description": "Fondo de secciones de producto (igual al fondo de la foto)"
+      },
+      "paper": {
+        "value": "#FFFFFF",
+        "type": "color",
+        "description": "Tarjetas sobre porcelana"
+      },
+      "ink": {
+        "value": "#0F172A",
+        "type": "color",
+        "description": "Texto principal"
+      },
+      "ink-2": {
+        "value": "#3B4457",
+        "type": "color",
+        "description": "Texto de apoyo"
+      },
+      "ink-3": {
+        "value": "#6B7385",
+        "type": "color",
+        "description": "Texto secundario"
+      },
+      "night": {
+        "value": "#0B0F17",
+        "type": "color",
+        "description": "Secciones de tecnología"
+      },
+      "night-2": {
+        "value": "#121825",
+        "type": "color",
+        "description": "Tarjetas en oscuro"
+      },
+      "on-night": {
+        "value": "#F2F4F8",
+        "type": "color",
+        "description": "Texto en oscuro"
+      },
+      "blue": {
+        "value": "#2563EB",
+        "type": "color",
+        "description": "Azul de marca, ojos de Jeeves"
+      },
+      "mint": {
+        "value": "#45EDD1",
+        "type": "color",
+        "description": "Acción: botones y activos"
+      },
+      "tray": {
+        "value": "#1E5A3D",
+        "type": "color",
+        "description": "Verde de las charolas, detalles"
+      }
+    },
+    "font": {
+      "display": {
+        "value": "Inter Tight",
+        "type": "fontFamilies"
+      },
+      "text": {
+        "value": "Inter",
+        "type": "fontFamilies"
+      }
+    },
+    "fontSize": {
+      "hero": {
+        "value": "106",
+        "type": "fontSizes"
+      },
+      "h2": {
+        "value": "67",
+        "type": "fontSizes"
+      },
+      "statement": {
+        "value": "58",
+        "type": "fontSizes"
+      },
+      "h3": {
+        "value": "24",
+        "type": "fontSizes"
+      },
+      "lead": {
+        "value": "21",
+        "type": "fontSizes"
+      },
+      "body": {
+        "value": "17",
+        "type": "fontSizes"
+      }
+    },
+    "spacing": {
+      "1": {
+        "value": "4",
+        "type": "spacing"
+      },
+      "2": {
+        "value": "8",
+        "type": "spacing"
+      },
+      "3": {
+        "value": "12",
+        "type": "spacing"
+      },
+      "4": {
+        "value": "16",
+        "type": "spacing"
+      },
+      "5": {
+        "value": "24",
+        "type": "spacing"
+      },
+      "6": {
+        "value": "32",
+        "type": "spacing"
+      },
+      "7": {
+        "value": "48",
+        "type": "spacing"
+      },
+      "8": {
+        "value": "64",
+        "type": "spacing"
+      },
+      "9": {
+        "value": "96",
+        "type": "spacing"
+      }
+    },
+    "borderRadius": {
+      "sm": {
+        "value": "14",
+        "type": "borderRadius"
+      },
+      "md": {
+        "value": "20",
+        "type": "borderRadius"
+      },
+      "lg": {
+        "value": "28",
+        "type": "borderRadius"
+      },
+      "pill": {
+        "value": "999",
+        "type": "borderRadius"
+      }
+    }
+  }
+}
