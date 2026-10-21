@@ -67,6 +67,28 @@
     return [ox + X * scale * k, oy - y * scale * k, k];
   }
 
+
+  /* plantilla de beneficio: dibujo arriba (o a la derecha), título grande y una línea de apoyo */
+  function benefit(u, back, ink, sub, title, line, motif) {
+    bg(back);
+    var port = H > W, r = port ? Math.min(W * .3, H * .17) : Math.min(H * .27, W * .17), mx = port ? W / 2 : W * .7, my = port ? H * .36 : H * .5;
+    cx.save(); motif(mx, my, r); cx.restore();
+    var px = Math.min(W * (port ? .1 : .065), H * (port ? .07 : .12)), tx = port ? W / 2 : 60 * S, ty = port ? H * .66 : H * .5, al = port ? 'center' : 'left';
+    maskWord(title, tx, ty, px, u, .15, .022, ink, al, -.035);
+    var k = eo(seg(u, .7, 1.2)); font('600', Math.min(W * (port ? .05 : .024), 26 * S), FT); cx.textAlign = al; cx.fillStyle = sub; cx.globalAlpha = k;
+    cx.fillText(line, tx, ty + px * .55 + 34 * S + 10 * S * (1 - k)); cx.globalAlpha = 1; cx.textAlign = 'left';
+  }
+  /* ráfaga: una palabra enorme por golpe, cada una con su color */
+  function rafaga(u, words) {
+    var k = Math.min(3, Math.floor(u / .5)), lu = u - k * .5;
+    var BGS = [INK, MINT, DEEP, WHITE], INKS = [WHITE, '#05070C', WHITE, '#05070C'];
+    bg(BGS[k]);
+    var w = words[k], px = Math.min(H * .3, W * .3); font('700', px); var tw = cx.measureText(w).width; if (tw > W * .88) px *= W * .88 / tw;
+    var sc = 1 + .28 * (1 - eo(seg(lu, 0, .14)));
+    cx.save(); cx.translate(W / 2, H / 2); cx.scale(sc, sc); font('700', px); cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.globalAlpha = .18 * (1 - seg(lu, 0, .2)); cx.fillStyle = INKS[k]; cx.fillText(w, 0, -px * .06); cx.save(); cx.scale(1.08, 1.08); cx.fillText(w, 0, 0); cx.restore();
+    cx.globalAlpha = 1; cx.fillText(w, 0, px * .04); cx.restore(); cx.textAlign = 'left'; cx.textBaseline = 'alphabetic';
+  }
   /* ---------- Escenas (el corte por compases está más abajo, en CUT) ---------- */
   var SC = [
     { n: 'APERTURA', d: 2.0, dark: true, f: function (u) {
@@ -331,19 +353,116 @@
       font('600', 11 * S, FT); cx.fillStyle = 'rgba(31,154,134,.9)'; cx.fillText('LLEGA A TODOS LADOS', 44 * S, H - 46 * S - px - 6 * S);
       maskWord(['Restaurantes.', 'Oficinas.', 'Escuelas.'][j], 44 * S, H - 46 * S, px, lu, 0, .02, '#05070C', 'left', -.03);
     } }
+,
+    { n: 'PREGUNTA', d: 4.0, dark: true, hit: [0, 1], f: function (u) {
+      bg(INK);
+      var port = H > W, px = Math.min(W * (port ? .15 : .1), H * .16), y = H * .46;
+      maskWord('¿Por qué', W / 2, y, px, u, .1, .03, WHITE, 'center', -.04);
+      maskWord('Jeeves?', W / 2, y + px * 1.05, px, u, 1, .035, MINT, 'center', -.04);
+      var k = eo(seg(u, 2, 2.6)); font('600', Math.min(W * .045, 24 * S), FT); cx.textAlign = 'center'; cx.fillStyle = 'rgba(244,246,250,' + k * .7 + ')';
+      cx.fillText('Mira lo que hace por tu negocio.', W / 2, y + px * 1.05 + 60 * S); cx.textAlign = 'left';
+    } },
+    { n: 'TIEMPO', d: 4.0, dark: true, hit: [0, 1.6], f: function (u) {
+      benefit(u, INK, WHITE, 'rgba(163,173,191,.95)', 'Ahorra tiempo.', 'Tu equipo deja de ir y venir.', function (mx, my, r) {
+        var sp = eo(seg(u, 0, 1.6)), sweep = eo(seg(u, 1.6, 2.5));
+        if (sweep > 0) { cx.fillStyle = 'rgba(69,237,209,.18)'; cx.beginPath(); cx.moveTo(mx, my); cx.arc(mx, my, r * .92, -Math.PI / 2, -Math.PI / 2 + Math.PI * .75 * sweep); cx.closePath(); cx.fill(); }
+        cx.strokeStyle = 'rgba(244,246,250,.9)'; cx.lineWidth = 3 * S; cx.beginPath(); cx.arc(mx, my, r, 0, 7); cx.stroke();
+        for (var i = 0; i < 60; i++) { var a = i / 60 * Math.PI * 2, l = i % 5 ? .06 : .13; cx.lineWidth = (i % 5 ? 1 : 2.5) * S; cx.strokeStyle = i % 5 ? 'rgba(244,246,250,.35)' : 'rgba(244,246,250,.85)';
+          cx.beginPath(); cx.moveTo(mx + Math.cos(a) * r * (1 - l - .04), my + Math.sin(a) * r * (1 - l - .04)); cx.lineTo(mx + Math.cos(a) * r * .96, my + Math.sin(a) * r * .96); cx.stroke(); }
+        var am = -Math.PI / 2 + Math.PI * 2 * 6 * sp, ah = -Math.PI / 2 + Math.PI * 2 * .5 * sp;
+        cx.lineCap = 'round'; cx.strokeStyle = WHITE; cx.lineWidth = 6 * S; cx.beginPath(); cx.moveTo(mx, my); cx.lineTo(mx + Math.cos(ah) * r * .5, my + Math.sin(ah) * r * .5); cx.stroke();
+        cx.strokeStyle = MINT; cx.lineWidth = 4 * S; cx.beginPath(); cx.moveTo(mx, my); cx.lineTo(mx + Math.cos(am) * r * .78, my + Math.sin(am) * r * .78); cx.stroke(); cx.lineCap = 'butt';
+        cx.fillStyle = MINT; cx.beginPath(); cx.arc(mx, my, 7 * S, 0, 7); cx.fill();
+      });
+    } },
+    { n: 'DINERO', d: 4.0, dark: false, hit: [0], f: function (u) {
+      benefit(u, MINT, '#05070C', 'rgba(5,7,12,.72)', 'Ahorra dinero.', 'Menos vueltas, menos costos.', function (mx, my, r) {
+        var cw = r * 1.15, chh = cw * .24, base = my + r * .75;
+        for (var k = 0; k < 8; k++) {
+          var t0 = .1 + k * .17, d = eo(seg(u, t0, t0 + .3)); if (d <= 0) continue;
+          var y = base - k * chh * .62 - (1 - d) * H * .5 + Math.sin(seg(u, t0 + .3, t0 + .5) * Math.PI) * -6 * S;
+          cx.fillStyle = '#05070C'; cx.beginPath(); cx.ellipse(mx, y + chh * .18, cw / 2, chh / 2, 0, 0, 7); cx.fill();
+          cx.fillStyle = '#F4F6FA'; cx.beginPath(); cx.ellipse(mx, y, cw / 2, chh / 2, 0, 0, 7); cx.fill();
+          cx.strokeStyle = '#05070C'; cx.lineWidth = 2.5 * S; cx.stroke();
+          if (k === 7) { font('700', chh * .85); cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = '#05070C'; cx.fillText('$', mx, y + chh * .04); cx.textAlign = 'left'; cx.textBaseline = 'alphabetic'; }
+        }
+      });
+    } },
+    { n: 'SIN PAUSAS', d: 4.0, dark: true, hit: [0, 2.7], f: function (u) {
+      benefit(u, DEEP, WHITE, 'rgba(244,246,250,.82)', 'Sin descansos.', 'Trabaja todo tu turno.', function (mx, my, r) {
+        var x0 = mx - r * 1.25, x1 = mx + r * 1.25, k = eio(seg(u, .25, 2.6)), xr = x0 + (x1 - x0) * k;
+        cx.strokeStyle = 'rgba(255,255,255,.25)'; cx.lineWidth = 3 * S; cx.beginPath(); cx.moveTo(x0, my); cx.lineTo(x1, my); cx.stroke();
+        for (var i = 0; i <= 12; i++) { var x = x0 + (x1 - x0) * i / 12; cx.fillStyle = x <= xr ? MINT : 'rgba(255,255,255,.35)'; cx.fillRect(x - 1 * S, my - (i % 3 ? 6 : 12) * S, 2 * S, (i % 3 ? 12 : 24) * S); }
+        cx.strokeStyle = MINT; cx.lineWidth = 4 * S; cx.beginPath(); cx.moveTo(x0, my); cx.lineTo(xr, my); cx.stroke();
+        cx.shadowColor = MINT; cx.shadowBlur = 24 * S; cx.fillStyle = WHITE; cx.beginPath(); cx.arc(xr, my, 9 * S, 0, 7); cx.fill(); cx.shadowBlur = 0;
+        font('600', 12 * S, FT); cx.fillStyle = 'rgba(244,246,250,.75)'; cx.fillText('ABRES', x0, my + 40 * S); cx.textAlign = 'right'; cx.fillText('CIERRAS', x1, my + 40 * S); cx.textAlign = 'left';
+        var ck = eo(seg(u, 2.6, 2.9)); if (ck > 0) { cx.strokeStyle = MINT; cx.lineWidth = 5 * S; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(x1 - 10 * S, my - 46 * S); cx.lineTo(x1 - 10 * S + 10 * S * Math.min(1, ck * 2), my - 46 * S + 10 * S * Math.min(1, ck * 2)); if (ck > .5) cx.lineTo(x1 - 10 * S + 10 * S + 18 * S * (ck - .5) * 2, my - 36 * S - 22 * S * (ck - .5) * 2); cx.stroke(); cx.lineCap = 'butt'; }
+      });
+    } },
+    { n: 'FÁCIL', d: 4.0, dark: false, hit: [0, 1.2], f: function (u) {
+      benefit(u, '#EEEDEC', '#05070C', 'rgba(59,68,87,.95)', 'Fácil de usar.', 'Eliges el destino desde tu celular.', function (mx, my, r) {
+        var pw = r * 1.05, ph = pw * 2.0, px0 = mx - pw / 2, py0 = my - ph / 2 + (1 - eo(seg(u, 0, .5))) * 60 * S;
+        cx.save(); cx.shadowColor = 'rgba(15,23,42,.25)'; cx.shadowBlur = 40 * S; cx.shadowOffsetY = 18 * S; rr(px0, py0, pw, ph, pw * .16); cx.fillStyle = '#0F172A'; cx.fill(); cx.restore();
+        rr(px0 + pw * .05, py0 + pw * .05, pw * .9, ph - pw * .1, pw * .12); cx.fillStyle = '#FFFFFF'; cx.fill();
+        var sx = px0 + pw * .12, sw = pw * .76;
+        font('700', pw * .085); cx.fillStyle = '#0F172A'; cx.fillText('¿A dónde voy?', sx, py0 + ph * .16);
+        var opts = ['Mesa 2', 'Mesa 5', 'Cocina'], tap = seg(u, 1.2, 1.35), chosen = u > 1.25;
+        opts.forEach(function (o, i) {
+          var by = py0 + ph * (.24 + i * .13), on = chosen && i === 1;
+          rr(sx, by, sw, ph * .1, ph * .05); cx.fillStyle = on ? MINT : '#F1F3F7'; cx.fill();
+          font('600', pw * .07, FT); cx.fillStyle = '#0F172A'; cx.fillText(o, sx + pw * .07, by + ph * .064);
+        });
+        if (u > .8 && u < 1.8) { var tx = sx + sw * .7, ty = py0 + ph * (.24 + .13) + ph * .05, rk = seg(u, 1.2, 1.7);
+          cx.fillStyle = 'rgba(15,23,42,' + (.35 * (1 - rk)) + ')'; cx.beginPath(); cx.arc(tx, ty, (14 + 30 * rk) * S, 0, 7); cx.fill();
+          cx.fillStyle = 'rgba(15,23,42,' + (1 - seg(u, 1.4, 1.8)) * .7 + ')'; cx.beginPath(); cx.arc(tx, ty, (12 - 3 * tap) * S, 0, 7); cx.fill(); }
+        if (chosen) { var pk = eio(seg(u, 1.5, 3.4)), yy = py0 + ph * .7;
+          font('600', pw * .06, FT); cx.fillStyle = '#1F9A86'; cx.fillText(pk < 1 ? 'En camino a Mesa 5' : 'Entregado en Mesa 5', sx, yy);
+          rr(sx, yy + ph * .03, sw, ph * .018, ph * .01); cx.fillStyle = '#E3E7EE'; cx.fill(); rr(sx, yy + ph * .03, sw * Math.max(.04, pk), ph * .018, ph * .01); cx.fillStyle = MINT; cx.fill(); }
+      });
+    } },
+    { n: 'IMAGEN', d: 4.0, dark: true, hit: [.3, .55, .9, 1.4, 1.7], f: function (u) {
+      bg(INK);
+      var port = H > W, h = Math.min(H * (port ? .5 : .62), W * (port ? .85 : .45)), ox = port ? W / 2 : W * .7, oy = port ? H * .38 : H * .5;
+      var g = cx.createRadialGradient(ox, oy, 0, ox, oy, h * .8); g.addColorStop(0, 'rgba(37,99,235,.3)'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      robot(ox, oy, h * (1 + .04 * eo(seg(u, 0, 4))), 0, 1);
+      [.3, .55, .9, 1.4, 1.7].forEach(function (f0, k) {
+        var d = u - f0; if (d < 0 || d > .35) return; var a = Math.exp(-d * 14);
+        cx.fillStyle = 'rgba(255,255,255,' + a * .55 + ')'; cx.fillRect(0, 0, W, H);
+        var sx2 = ox + (rnd(k * 3) - .5) * h * .9, sy2 = oy + (rnd(k * 3 + 1) - .5) * h * .9, sl = (30 + 40 * rnd(k)) * S * a;
+        cx.strokeStyle = 'rgba(255,255,255,' + a + ')'; cx.lineWidth = 2 * S; cx.beginPath(); cx.moveTo(sx2 - sl, sy2); cx.lineTo(sx2 + sl, sy2); cx.moveTo(sx2, sy2 - sl); cx.lineTo(sx2, sy2 + sl); cx.stroke();
+      });
+      var px = Math.min(W * (port ? .095 : .055), 52 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .76 : H * .48, al = port ? 'center' : 'left';
+      maskWord('Se roba', tx, ty, px, u, 1.9, .02, WHITE, al, -.035);
+      maskWord('las miradas.', tx, ty + px * 1.08, px, u, 2.1, .02, MINT, al, -.035);
+      var k2 = eo(seg(u, 2.6, 3.1)); font('600', Math.min(W * .05, 26 * S), FT); cx.textAlign = al; cx.fillStyle = 'rgba(163,173,191,' + k2 + ')'; cx.fillText('Tu negocio se ve moderno.', tx, ty + px * 1.08 + 44 * S); cx.textAlign = 'left';
+    } },
+    { n: 'RÁFAGA', d: 2.0, dark: true, hit: [0, .5, 1, 1.5], f: function (u) { rafaga(u, ['AHORRA', 'TIEMPO.', 'AHORRA', 'DINERO.']); } },
+    { n: 'BENEFICIOS', d: 2.0, dark: true, hit: [0, .5, 1, 1.5], f: function (u) { rafaga(u, ['MENOS VUELTAS.', 'MÁS TIEMPO.', 'CERO PAUSAS.', 'JEEVES.']); } }
   ];
-  var ORDER = ['APERTURA', 'FOTO', 'MIRADA', 'FRASE', 'CUENTA', 'IMPACTO', 'SERVICIO', 'PULSO', 'HOLOGRAMA', 'CAPAS', 'RITMO', 'RUTA', 'LUGARES', 'NÚMEROS', 'VELOCIDAD LUZ', 'JEEVES'];
+  var ORDER = ['APERTURA', 'FOTO', 'MIRADA', 'PREGUNTA', 'TIEMPO', 'DINERO', 'SIN PAUSAS', 'FRASE', 'FÁCIL', 'IMAGEN', 'CUENTA', 'IMPACTO', 'SERVICIO', 'RÁFAGA', 'PULSO', 'HOLOGRAMA', 'CAPAS', 'RITMO', 'RUTA', 'LUGARES', 'BENEFICIOS', 'NÚMEROS', 'VELOCIDAD LUZ', 'JEEVES'];
   SC = ORDER.map(function (n) { for (var i = 0; i < SC.length; i++) if (SC[i].n === n) return SC[i]; });
   var IX = {}; SC.forEach(function (sc, i) { IX[sc.n] = i; });
   /* ---------- Corte al ritmo: 120.98 BPM, 8 compases de subida y drop en "JEEVES" ----------
      [beat inicio, beat fin, escena, u inicio, u fin]  (beats contados desde el drop) */
-  var BEAT = 60 / 120.98, PRE = 32, POST = 72;
-  var CUT = [[-32, -24, 'APERTURA', 0, 2], [-24, -16, 'FOTO', 0, 4], [-16, -8, 'MIRADA', 0, 2], [-8, -4, 'FRASE', 0, 2], [-4, 0, 'CUENTA', 0, 2],
-    [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'PULSO', 0, 1.5], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'CAPAS', 0, 4],
-    [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 48, 'LUGARES', 0, 4], [48, 49, 'NÚMEROS', 0, .75], [49, 50, 'NÚMEROS', .75, 1.5], [50, 52, 'NÚMEROS', 1.5, 2.5],
-    [52, 56, 'VELOCIDAD LUZ', 0, 1.5], [56, 60, 'JEEVES', 0, 2.4], [60, 60 + 2.6 / BEAT, 'JEEVES', 2.4, 5], [60 + 2.6 / BEAT, POST, 'JEEVES', 4.99, 4.99]]
+  var BEAT = 60 / 120.98, POST = 72;
+  var TAIL = [[48, 49, 'NÚMEROS', 0, .75], [49, 50, 'NÚMEROS', .75, 1.5], [50, 52, 'NÚMEROS', 1.5, 2.5], [52, 56, 'VELOCIDAD LUZ', 0, 1.5],
+    [56, 60, 'JEEVES', 0, 2.4], [60, 60 + 2.6 / BEAT, 'JEEVES', 2.4, 5], [60 + 2.6 / BEAT, POST, 'JEEVES', 4.99, 4.99]];
+  var CUTS = {
+    /* web: 52 s con la pista original (8 compases de subida) */
+    web: [[-32, -24, 'APERTURA', 0, 2], [-24, -16, 'FOTO', 0, 4], [-16, -12, 'TIEMPO', 0, 4], [-12, -8, 'DINERO', 0, 4], [-8, -4, 'FRASE', 0, 2], [-4, 0, 'CUENTA', 0, 2],
+      [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'CAPAS', 0, 4],
+      [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 44, 'LUGARES', 0, 2.999], [44, 48, 'BENEFICIOS', 0, 2]].concat(TAIL),
+    /* video: 83 s con la canción desde el inicio (24 compases de subida, drop en "JEEVES") */
+    video: [[-96, -84, 'APERTURA', 0, 2], [-84, -76, 'FOTO', 0, 4], [-76, -68, 'MIRADA', 0, 2], [-68, -60, 'PREGUNTA', 0, 4], [-60, -52, 'TIEMPO', 0, 4], [-52, -44, 'DINERO', 0, 4],
+      [-44, -36, 'SIN PAUSAS', 0, 4], [-36, -28, 'FRASE', 0, 2], [-28, -20, 'FÁCIL', 0, 4], [-20, -12, 'LUGARES', 0, 4], [-12, -4, 'IMAGEN', 0, 4], [-4, 0, 'CUENTA', 0, 2],
+      [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'CAPAS', 0, 4],
+      [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 44, 'PULSO', 0, 1.5], [44, 48, 'BENEFICIOS', 0, 2]].concat(TAIL)
+  };
+  var RAW = CUTS[window.JEEVES_CUT] || CUTS.web, PRE = -RAW[0][0];
+  var CUT = RAW
     .map(function (c) { return [(c[0] + PRE) * BEAT, (c[1] + PRE) * BEAT, IX[c[2]], c[3], c[4]]; });
   var DUR = (PRE + POST) * BEAT;
+  var NUM = {}, NSC = 0; CUT.forEach(function (c) { if (NUM[c[2]] == null) NUM[c[2]] = ++NSC; });
   SC.forEach(function (sc) { sc.a = 0; }); CUT.forEach(function (c) { if (!SC[c[2]].a && c[2]) SC[c[2]].a = c[0]; });
   function locate(tv) {
     for (var i = 0; i < CUT.length; i++) { var c = CUT[i]; if (tv < c[1] || i === CUT.length - 1) { var k = cl((tv - c[0]) / (c[1] - c[0])); return [c[2], c[3] + (c[4] - c[3]) * k]; } }
@@ -381,7 +500,7 @@
     var fr = Math.floor((t % 1) * 24), tc = '00:' + ('0' + Math.floor(t)).slice(-2) + ':' + ('0' + fr).slice(-2);
     cx.fillText('JEEVES ROBOTICS — REEL', m + 22 * S, m + 14 * S);
     cx.textAlign = 'right'; cx.fillText(tc, W - m - 22 * S, m + 14 * S);
-    cx.fillText(('0' + (i + 1)).slice(-2) + ' / ' + ('0' + SC.length).slice(-2), W - m - 122 * S, H - m - 6 * S);
+    cx.fillText(('0' + (NUM[i] || i + 1)).slice(-2) + ' / ' + ('0' + NSC).slice(-2), W - m - 122 * S, H - m - 6 * S);
     cx.textAlign = 'left'; cx.fillText(SC[i].n, m + 22 * S, H - m - 6 * S);
   }
 
