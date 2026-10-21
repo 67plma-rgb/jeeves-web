@@ -452,27 +452,19 @@
       maskWord('las miradas.', tx, ty + px * 1.08, px, u, 2.1, .02, MINT, al, -.035);
       var k2 = eo(seg(u, 2.6, 3.1)); font('600', Math.min(W * .05, 26 * S), FT); cx.textAlign = al; cx.fillStyle = 'rgba(163,173,191,' + k2 + ')'; cx.fillText('Tu negocio se ve moderno.', tx, ty + px * 1.08 + 44 * S); cx.textAlign = 'left';
     } },
-    { n: 'CEREBRO', d: 10.0, dark: true, hit: [], f: function (u) {
+    { n: 'CEREBRO', d: 3.0, dark: true, hit: [], f: function (u) {
       bg(INK);
-      var port = H > W, R = port ? Math.min(W * .38, H * .21) : Math.min(H * .36, W * .24), mx = port ? W / 2 : W * .64, my = port ? H * .31 : H * .45;
+      var port = H > W, R = port ? Math.min(W * .4, H * .22) : Math.min(H * .38, W * .26), mx = port ? W / 2 : W * .62, my = port ? H * .4 : H * .48;
       var last = BP >= -4 && BP < 0, fr = BP - Math.floor(BP), beatK = last ? (.6 + (BP + 4) * .3) * Math.exp(-fr * 5) : 0;
-      var flick = .85 + .15 * Math.sin(u * 23) * Math.sin(u * 7.3), energy = (.55 + .45 * eo(seg(u, 2.5, 6))) * flick + beatK * .6;
-      /* proyector en el piso: anillos y haz de luz */
-      var by = my + R * 1.18, ka = eo(seg(u, 0, 1.2));
-      var beam = cx.createLinearGradient(0, by, 0, my - R); beam.addColorStop(0, 'rgba(69,237,209,' + (.16 * ka) + ')'); beam.addColorStop(1, 'rgba(69,237,209,0)');
-      cx.fillStyle = beam; cx.beginPath(); cx.moveTo(mx - R * .5, by); cx.lineTo(mx + R * .5, by); cx.lineTo(mx + R * 1.05, my - R * .9); cx.lineTo(mx - R * 1.05, my - R * .9); cx.closePath(); cx.fill();
-      cx.save(); cx.translate(mx, by); cx.scale(1, .22);
-      for (var rI = 0; rI < 3; rI++) { var rr3 = R * (.42 + rI * .2) * ka; cx.strokeStyle = 'rgba(69,237,209,' + (.7 - rI * .18) * ka + ')'; cx.lineWidth = (3 - rI) * S / .22 * .25;
-        cx.setLineDash([R * (.1 + rI * .05), R * .06]); cx.lineDashOffset = -u * R * (.3 + rI * .2) * (rI % 2 ? -1 : 1); cx.beginPath(); cx.arc(0, 0, rr3, 0, 7); cx.stroke(); }
-      cx.setLineDash([]); cx.fillStyle = 'rgba(69,237,209,' + (.25 * ka) + ')'; cx.beginPath(); cx.arc(0, 0, R * .36 * ka, 0, 7); cx.fill(); cx.restore();
-      /* la red: brillo suave (a baja resolución) + filamentos nítidos */
-      var rot = -.5 + u * .32, cr = Math.cos(rot), sr = Math.sin(rot), sc = R * (1 + beatK * .05) * (.92 + .08 * eo(seg(u, 0, 3)));
+      var flick = .88 + .12 * Math.sin(u * 23) * Math.sin(u * 7.3), energy = (.5 + .5 * eo(seg(u, .4, 1.4))) * flick + beatK * .6;
+      var g = cx.createRadialGradient(mx, my, 0, mx, my, R * 1.9); g.addColorStop(0, 'rgba(37,99,235,' + (.2 * energy) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      var rot = -.7 + u * .45, cr = Math.cos(rot), sr = Math.sin(rot), sc = R * (1 + beatK * .05) * (.9 + .1 * eo(seg(u, 0, 1.5)));
       var gw = Math.max(1, Math.round(W / 4)), gh = Math.max(1, Math.round(H / 4)); if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
       glowCx.setTransform(1, 0, 0, 1, 0, 0); glowCx.clearRect(0, 0, gw, gh); glowCx.globalCompositeOperation = 'lighter'; glowCx.lineCap = 'round';
       cx.globalCompositeOperation = 'lighter'; cx.lineCap = 'round';
       var proj = function (q) { var X = q[0] * cr - q[2] * sr, Z = q[0] * sr + q[2] * cr, k = 3 / (3 + Z); return [mx + X * sc * k, my - q[1] * sc * k, k]; };
       for (var i = 0; i < NEURO.length; i++) {
-        var st = NEURO[i], a = eo(seg(u, .3 + st.d * 2.6, 1.0 + st.d * 2.6)); if (a <= 0) continue;
+        var st = NEURO[i], a = eo(seg(u, .02 + st.d * .9, .4 + st.d * .9)); if (a <= 0) continue;
         var pts = st.p, n = Math.max(2, Math.ceil(pts.length * a)), Pp = [];
         for (var k = 0; k < n; k++) Pp.push(proj(pts[k]));
         var dk = (Pp[0][2] + Pp[n - 1][2]) * .5, col = st.c < .38 ? '77,139,255' : st.c < .88 ? '69,237,209' : '220,250,255', al = Math.min(1, a * energy * (dk - .55) * 1.25);
@@ -481,52 +473,38 @@
         cx.strokeStyle = 'rgba(' + col + ',' + al * .42 + ')'; cx.lineWidth = (.5 + .7 * dk) * S; cx.beginPath(); cx.moveTo(Pp[0][0], Pp[0][1]);
         for (k = 1; k < n; k++) { glowCx.lineTo(Pp[k][0] / 4, Pp[k][1] / 4); cx.lineTo(Pp[k][0], Pp[k][1]); }
         glowCx.stroke(); cx.stroke();
-        /* pulso de energía que recorre el filamento */
-        if (u > 2 && st.c > .6) {
-          var ph = (u * st.sp * (1 + 1.5 * seg(u, 3, 9.5)) + st.c * 7) % 1, j = Math.floor(ph * (n - 1));
+        if (u > .6 && st.c > .6) {
+          var ph = (u * st.sp * 2.2 + st.c * 7) % 1, j = Math.floor(ph * (n - 1));
           if (j < n - 1) { cx.strokeStyle = 'rgba(244,246,250,' + Math.min(1, al * 1.6) + ')'; cx.lineWidth = 2 * S; cx.beginPath(); cx.moveTo(Pp[j][0], Pp[j][1]); cx.lineTo(Pp[j + 1][0], Pp[j + 1][1]); cx.stroke(); }
         }
         if (st.c > .9) { cx.fillStyle = 'rgba(244,246,250,' + al + ')'; cx.beginPath(); cx.arc(Pp[n - 1][0], Pp[n - 1][1], 2.2 * S * dk, 0, 7); cx.fill(); }
       }
       cx.globalAlpha = Math.min(1, .9 * energy); cx.drawImage(glowCv, 0, 0, W, H); cx.globalAlpha = 1;
-      /* corazón de luz y los ojos de Jeeves que aparecen dentro */
-      var core = cx.createRadialGradient(mx, my, 0, mx, my, R * .55); core.addColorStop(0, 'rgba(180,240,255,' + (.35 * energy) + ')'); core.addColorStop(1, 'rgba(69,237,209,0)');
-      cx.fillStyle = core; cx.beginPath(); cx.arc(mx, my, R * .55, 0, 7); cx.fill();
       cx.globalCompositeOperation = 'source-over'; cx.lineCap = 'butt';
-      var ek = eo(seg(u, 6.2, 7.2));
-      if (ek > 0) { var ew = R * .13, eh = R * .24 * ((u % 2.6 > 2.48) ? .12 : 1) * (1 + beatK * .2); cx.globalAlpha = ek; cx.shadowColor = BLUE; cx.shadowBlur = 30 * S; cx.fillStyle = '#7FB0FF';
-        [-1, 1].forEach(function (sd) { rr(mx + sd * R * .14 - ew / 2, my - eh / 2, ew, eh, ew / 2); cx.fill(); }); cx.shadowBlur = 0; cx.globalAlpha = 1; }
-      /* datos alrededor */
-      var D = [['RUTA', 'LISTA', -.7], ['OBSTÁCULOS', '0', .62], ['DESTINO', 'MESA 5', 2.52], ['ESTADO', 'EN CAMINO', -2.44]];
-      D.forEach(function (d, kk) {
-        var a2 = eo(seg(u, 3.4 + kk * .45, 3.8 + kk * .45)); if (a2 <= 0) return;
-        var an = d[2], right = Math.cos(an) > 0, ey = my + Math.sin(an) * R * .95, ex = port ? (right ? W - 150 * S : 150 * S) : mx + Math.cos(an) * R * 1.12, lx2 = port ? (right ? W - 140 * S : 140 * S) : ex + (right ? 1 : -1) * R * .18;
-        if (port) ey = my + (Math.sin(an) > 0 ? R * .95 : -R * .95);
-        cx.strokeStyle = 'rgba(69,237,209,' + a2 * .7 + ')'; cx.lineWidth = 1.2 * S; cx.beginPath(); cx.moveTo(mx + Math.cos(an) * R * .9, my + Math.sin(an) * R * .78); cx.lineTo(ex, ey); cx.lineTo(lx2, ey); cx.stroke();
-        cx.textAlign = port ? (right ? 'right' : 'left') : (right ? 'left' : 'right'); var tx2 = port ? (right ? W - 36 * S : 36 * S) : lx2 + (right ? 6 : -6) * S;
-        font('600', 11 * S, FT); cx.fillStyle = 'rgba(163,173,191,' + a2 + ')'; cx.fillText(d[0], tx2, ey - 6 * S);
-        font('700', 18 * S, FT); cx.fillStyle = 'rgba(244,246,250,' + a2 + ')'; cx.fillText(d[1].slice(0, Math.ceil(d[1].length * seg(u, 3.5 + kk * .45, 4 + kk * .45))), tx2, ey + 17 * S);
-        cx.textAlign = 'left';
-      });
-      var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .66 : H * .3, al3 = port ? 'center' : 'left';
-      maskWord('El cerebro', tx, ty, px, u, 4.6, .02, WHITE, al3, -.035);
-      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, 4.85, .02, MINT, al3, -.035);
-      var L = ['Piensa la mejor ruta', 'Detecta personas y objetos', 'Te avisa cuando entrega'], fz = Math.min(W * (port ? .045 : .022), 24 * S);
-      font('600', fz, FT); cx.textAlign = 'left';
-      var lw = 0; L.forEach(function (l) { lw = Math.max(lw, cx.measureText(l).width); });
-      var lx = port ? W / 2 - (lw + 28 * S) / 2 : 60 * S, ly = ty + px * 1.06 + (port ? 64 : 70) * S;
-      L.forEach(function (l, kk) {
-        var a3 = eo(seg(u, 6 + kk * .8, 6.5 + kk * .8)); if (a3 <= 0) return;
-        var y = ly + kk * fz * 1.9;
-        cx.fillStyle = 'rgba(69,237,209,' + a3 + ')'; cx.beginPath(); cx.arc(lx + 6 * S, y - fz * .32, 5 * S, 0, 7); cx.fill();
-        cx.fillStyle = 'rgba(244,246,250,' + a3 + ')'; cx.fillText(l, lx + 28 * S + 14 * S * (1 - a3), y);
-      });
+      var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .73 : H * .44, al3 = port ? 'center' : 'left';
+      maskWord('El cerebro', tx, ty, px, u, .5, .018, WHITE, al3, -.035);
+      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, .7, .018, MINT, al3, -.035);
       if (BP > -.35 && BP < 0) { cx.fillStyle = 'rgba(244,246,250,' + ei(seg(BP, -.35, 0)) + ')'; cx.fillRect(0, 0, W, H); }
+    } },
+    { n: 'ESTRELLA', d: 4.0, dark: true, hit: [0, 1, 2, 3], f: function (u) {
+      var k = Math.min(3, Math.floor(u)), lu = u - k, port = H > W;
+      var BGS = [INK, DEEP, INK, DEEP], WORDS = ['INCANSABLE.', 'PUNTUAL.', 'MODERNO.', 'TUYO.'];
+      bg(BGS[k]);
+      var w = WORDS[k], px = Math.min(H * .34, W * .34); font('700', px); var tw = cx.measureText(w).width; if (tw > W * 1.15) px *= W * 1.15 / tw;
+      var drift = (lu - .5) * W * .06 * (k % 2 ? -1 : 1);
+      cx.save(); font('700', px); cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.lineWidth = 2 * S;
+      cx.strokeStyle = 'rgba(69,237,209,' + (.55 * (1 - seg(lu, .7, 1))) + ')'; cx.strokeText(w, W / 2 + drift, H * (port ? .3 : .5));
+      cx.fillStyle = 'rgba(244,246,250,.07)'; cx.fillText(w, W / 2 + drift, H * (port ? .7 : .5)); cx.restore();
+      var h = Math.min(H * (port ? .62 : .68), W * (port ? 1.0 : .5)), sc2 = 1 + .06 * (1 - eo(seg(lu, 0, .18))), ry = H * (port ? .5 : .45);
+      var g = cx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, h * .7); g.addColorStop(0, 'rgba(77,139,255,.28)'); g.addColorStop(1, 'rgba(77,139,255,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      cx.save(); cx.translate(W / 2, ry); cx.scale(sc2, sc2); cx.translate(-W / 2, -ry); robot(W / 2, ry, h, 0, 1); cx.restore();
+      var ty = port ? H - 70 * S : H - 56 * S; font('700', Math.min(W * .07, 40 * S)); cx.textAlign = 'center'; cx.fillStyle = WHITE; cx.globalAlpha = eo(seg(lu, 0, .2));
+      cx.fillText(WORDS[k].replace('.', '').charAt(0) + WORDS[k].replace('.', '').slice(1).toLowerCase() + '.', W / 2, ty); cx.globalAlpha = 1; cx.textAlign = 'left';
     } },
     { n: 'RÁFAGA', d: 2.0, dark: true, hit: [0, .5, 1, 1.5], f: function (u) { rafaga(u, ['AHORRA', 'TIEMPO.', 'AHORRA', 'DINERO.']); } },
     { n: 'BENEFICIOS', d: 2.0, dark: true, hit: [0, .5, 1, 1.5], f: function (u) { rafaga(u, ['MENOS VUELTAS.', 'MÁS TIEMPO.', 'CERO PAUSAS.', 'JEEVES.']); } }
   ];
-  var ORDER = ['APERTURA', 'FOTO', 'MIRADA', 'PREGUNTA', 'TIEMPO', 'DINERO', 'SIN PAUSAS', 'FRASE', 'FÁCIL', 'CEREBRO', 'IMAGEN', 'CUENTA', 'IMPACTO', 'SERVICIO', 'RÁFAGA', 'PULSO', 'HOLOGRAMA', 'CAPAS', 'RITMO', 'RUTA', 'LUGARES', 'BENEFICIOS', 'NÚMEROS', 'VELOCIDAD LUZ', 'JEEVES'];
+  var ORDER = ['APERTURA', 'FOTO', 'MIRADA', 'PREGUNTA', 'TIEMPO', 'DINERO', 'SIN PAUSAS', 'FRASE', 'FÁCIL', 'CEREBRO', 'ESTRELLA', 'IMAGEN', 'CUENTA', 'IMPACTO', 'SERVICIO', 'RÁFAGA', 'PULSO', 'HOLOGRAMA', 'CAPAS', 'RITMO', 'RUTA', 'LUGARES', 'BENEFICIOS', 'NÚMEROS', 'VELOCIDAD LUZ', 'JEEVES'];
   SC = ORDER.map(function (n) { for (var i = 0; i < SC.length; i++) if (SC[i].n === n) return SC[i]; });
   var IX = {}; SC.forEach(function (sc, i) { IX[sc.n] = i; });
   /* ---------- Corte al ritmo: 120.98 BPM, 8 compases de subida y drop en "JEEVES" ----------
@@ -536,13 +514,13 @@
     [56, 60, 'JEEVES', 0, 2.4], [60, 60 + 2.6 / BEAT, 'JEEVES', 2.4, 5], [60 + 2.6 / BEAT, POST, 'JEEVES', 4.99, 4.99]];
   var CUTS = {
     /* web: 52 s con la pista original (8 compases de subida) */
-    web: [[-32, -24, 'APERTURA', 0, 2], [-24, -16, 'FOTO', 0, 4], [-16, -12, 'TIEMPO', 0, 4], [-12, -8, 'DINERO', 0, 4], [-8, 0, 'CEREBRO', 3, 10],
+    web: [[-32, -24, 'APERTURA', 0, 2], [-24, -16, 'FOTO', 0, 4], [-16, -12, 'TIEMPO', 0, 4], [-12, -6, 'DINERO', 0, 4], [-6, 0, 'CEREBRO', 0, 3],
       [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'LUGARES', 0, 4],
       [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 44, 'PULSO', 0, 1.5], [44, 48, 'BENEFICIOS', 0, 2]].concat(TAIL),
     /* video: 83 s con la canción desde el inicio (24 compases de subida, drop en "JEEVES") */
     video: [[-96, -84, 'APERTURA', 0, 2], [-84, -76, 'FOTO', 0, 4], [-76, -68, 'MIRADA', 0, 2], [-68, -60, 'PREGUNTA', 0, 4], [-60, -52, 'TIEMPO', 0, 4], [-52, -44, 'DINERO', 0, 4],
-      [-44, -36, 'SIN PAUSAS', 0, 4], [-36, -28, 'FRASE', 0, 2], [-28, -20, 'FÁCIL', 0, 4], [-20, 0, 'CEREBRO', 0, 10],
-      [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'LUGARES', 0, 4],
+      [-44, -36, 'SIN PAUSAS', 0, 4], [-36, -28, 'FRASE', 0, 2], [-28, -20, 'FÁCIL', 0, 4], [-20, -6, 'LUGARES', 0, 4.5], [-6, 0, 'CEREBRO', 0, 3],
+      [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'ESTRELLA', 0, 4],
       [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 44, 'PULSO', 0, 1.5], [44, 48, 'BENEFICIOS', 0, 2]].concat(TAIL)
   };
   var RAW = CUTS[window.JEEVES_CUT] || CUTS.web, PRE = -RAW[0][0];
