@@ -68,7 +68,21 @@
   }
 
 
-  /* ---------- Cerebro de Jeeves: holograma de asistente ---------- */
+  /* ---------- Cerebro de Jeeves: holograma de red neuronal ----------
+     Filamentos que siguen un campo de flujo dentro de un volumen con forma de cerebro (dos hemisferios). */
+  var NEURO = (function () {
+    function vol(x, y, z) { var a = Math.pow(x / 1.0, 2) + Math.pow((y - .05) / .66, 2), l = a + Math.pow((z + .3) / .42, 2), r = a + Math.pow((z - .3) / .42, 2); return Math.min(l, r) + (y < -.5 ? 9 : 0) + (Math.abs(z) < .04 ? 9 : 0); }
+    function field(x, y, z) { var fx = Math.sin(y * 3.1 + z * 1.7) + .6 * Math.sin(z * 5.3 - x * 2.1), fy = Math.sin(z * 2.7 + x * 2.3) + .6 * Math.sin(x * 4.7 + y * 1.3), fz = Math.sin(x * 2.9 + y * 2.2) + .6 * Math.sin(y * 5.1 - z * 1.9); var l = Math.hypot(fx, fy, fz) || 1; return [fx / l, fy / l, fz / l]; }
+    var out = [], tries = 0;
+    while (out.length < 640 && tries < 40000) {
+      tries++; var x = rnd(tries * 1.3) * 2 - 1, y = rnd(tries * 2.7 + 3) * 1.6 - .75, z = rnd(tries * 3.9 + 7) * 1.6 - .8; if (vol(x, y, z) > 1) continue;
+      var pts = [[x, y, z]], st = .03 + .022 * rnd(tries), n = 5 + Math.floor(rnd(tries * 5) * 7);
+      for (var k = 0; k < n; k++) { var f = field(x, y, z); x += f[0] * st; y += f[1] * st; z += f[2] * st; var v = vol(x, y, z); if (v > 1) { var q = 1 / Math.sqrt(v); x *= q; y = (y - .05) * q + .05; z *= q; } pts.push([x, y, z]); }
+      out.push({ p: pts, d: Math.min(1, Math.hypot(pts[0][0], pts[0][1], pts[0][2]) / 1.1), c: rnd(tries * 9.1), sp: .4 + rnd(tries * 4.4) });
+    }
+    return out;
+  })();
+  var glowCv = document.createElement('canvas'), glowCx = glowCv.getContext('2d');
   var BP = 0; /* posición en beats (desde el drop) del cuadro actual */
   /* plantilla de beneficio: dibujo arriba (o a la derecha), título grande y una línea de apoyo */
   function benefit(u, back, ink, sub, title, line, motif) {
@@ -440,67 +454,72 @@
     } },
     { n: 'CEREBRO', d: 10.0, dark: true, hit: [], f: function (u) {
       bg(INK);
-      var port = H > W, R = port ? Math.min(W * .36, H * .2) : Math.min(H * .38, W * .24), mx = port ? W / 2 : W * .64, my = port ? H * .33 : H * .5;
+      var port = H > W, R = port ? Math.min(W * .38, H * .21) : Math.min(H * .36, W * .24), mx = port ? W / 2 : W * .64, my = port ? H * .31 : H * .45;
       var last = BP >= -4 && BP < 0, fr = BP - Math.floor(BP), beatK = last ? (.6 + (BP + 4) * .3) * Math.exp(-fr * 5) : 0;
-      var spin = 1 + 2.5 * ei(seg(BP, -4, 0)), tt = u * spin, A = function (k) { return eio(seg(u, .2 + k * .35, .9 + k * .35)); };
-      var g = cx.createRadialGradient(mx, my, 0, mx, my, R * 2); g.addColorStop(0, 'rgba(37,99,235,' + (.26 + .2 * beatK) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-      cx.save(); cx.translate(mx, my); cx.scale(1 + beatK * .035, 1 + beatK * .035); cx.globalCompositeOperation = 'lighter'; cx.lineCap = 'butt';
-      function arc(r, a0, a1, w, col) { cx.strokeStyle = col; cx.lineWidth = w; cx.beginPath(); cx.arc(0, 0, r, a0, a1); cx.stroke(); }
-      var C = 'rgba(69,237,209,', B = 'rgba(77,139,255,', Wt = 'rgba(244,246,250,';
-      /* 1 · anillo exterior con marcas finas */
-      var k1 = A(0), r1 = R * 1.0;
-      if (k1 > 0) { arc(r1, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k1, 1.2 * S, C + '.55)');
-        for (var i = 0; i < 120 * k1; i++) { var an = i / 120 * Math.PI * 2 + tt * .05, l = i % 10 ? .025 : .06; cx.strokeStyle = i % 10 ? C + '.35)' : C + '.8)'; cx.lineWidth = (i % 10 ? 1 : 2) * S;
-          cx.beginPath(); cx.moveTo(Math.cos(an) * r1 * (1 - l), Math.sin(an) * r1 * (1 - l)); cx.lineTo(Math.cos(an) * r1, Math.sin(an) * r1); cx.stroke(); } }
-      /* 2 · arcos segmentados que giran al revés */
-      var k2 = A(1), r2 = R * .86;
-      if (k2 > 0) for (i = 0; i < 9; i++) { var a0 = i / 9 * Math.PI * 2 - tt * .35, len = (.25 + .35 * rnd(i * 5)) * k2; arc(r2, a0, a0 + len, (i % 3 ? 3 : 7) * S, i % 3 ? B + '.55)' : C + '.85)'); }
-      /* 3 · tres arcos gruesos y un radar que barre */
-      var k3 = A(2), r3 = R * .72;
-      if (k3 > 0) { for (i = 0; i < 3; i++) { var b0 = i / 3 * Math.PI * 2 + tt * .6; arc(r3, b0, b0 + Math.PI * .42 * k3, 12 * S, C + (.35 + .25 * beatK) + ')'); }
-        var sw = tt * 1.4; cx.fillStyle = C + '.10)'; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, r1 * .98, sw - .5, sw); cx.closePath(); cx.fill();
-        cx.strokeStyle = C + '.7)'; cx.lineWidth = 1.5 * S; cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(Math.cos(sw) * r1 * .98, Math.sin(sw) * r1 * .98); cx.stroke(); }
-      /* 4 · anillo de ondas de voz alrededor de los ojos */
-      var k4 = A(3), r4 = R * .44;
-      if (k4 > 0) for (i = 0; i < 72; i++) {
-        var an2 = i / 72 * Math.PI * 2, amp = (.35 + .65 * Math.abs(Math.sin(i * .9 + u * 5) * Math.sin(i * .37 - u * 3.1))) * (.6 + .4 * seg(u, 3, 8)) + beatK * .8;
-        var l2 = R * (.03 + .14 * amp) * k4; cx.strokeStyle = i % 2 ? C + '.75)' : B + '.75)'; cx.lineWidth = 2.2 * S;
-        cx.beginPath(); cx.moveTo(Math.cos(an2) * r4, Math.sin(an2) * r4); cx.lineTo(Math.cos(an2) * (r4 + l2), Math.sin(an2) * (r4 + l2)); cx.stroke();
+      var flick = .85 + .15 * Math.sin(u * 23) * Math.sin(u * 7.3), energy = (.55 + .45 * eo(seg(u, 2.5, 6))) * flick + beatK * .6;
+      /* proyector en el piso: anillos y haz de luz */
+      var by = my + R * 1.18, ka = eo(seg(u, 0, 1.2));
+      var beam = cx.createLinearGradient(0, by, 0, my - R); beam.addColorStop(0, 'rgba(69,237,209,' + (.16 * ka) + ')'); beam.addColorStop(1, 'rgba(69,237,209,0)');
+      cx.fillStyle = beam; cx.beginPath(); cx.moveTo(mx - R * .5, by); cx.lineTo(mx + R * .5, by); cx.lineTo(mx + R * 1.05, my - R * .9); cx.lineTo(mx - R * 1.05, my - R * .9); cx.closePath(); cx.fill();
+      cx.save(); cx.translate(mx, by); cx.scale(1, .22);
+      for (var rI = 0; rI < 3; rI++) { var rr3 = R * (.42 + rI * .2) * ka; cx.strokeStyle = 'rgba(69,237,209,' + (.7 - rI * .18) * ka + ')'; cx.lineWidth = (3 - rI) * S / .22 * .25;
+        cx.setLineDash([R * (.1 + rI * .05), R * .06]); cx.lineDashOffset = -u * R * (.3 + rI * .2) * (rI % 2 ? -1 : 1); cx.beginPath(); cx.arc(0, 0, rr3, 0, 7); cx.stroke(); }
+      cx.setLineDash([]); cx.fillStyle = 'rgba(69,237,209,' + (.25 * ka) + ')'; cx.beginPath(); cx.arc(0, 0, R * .36 * ka, 0, 7); cx.fill(); cx.restore();
+      /* la red: brillo suave (a baja resolución) + filamentos nítidos */
+      var rot = -.5 + u * .32, cr = Math.cos(rot), sr = Math.sin(rot), sc = R * (1 + beatK * .05) * (.92 + .08 * eo(seg(u, 0, 3)));
+      var gw = Math.max(1, Math.round(W / 4)), gh = Math.max(1, Math.round(H / 4)); if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
+      glowCx.setTransform(1, 0, 0, 1, 0, 0); glowCx.clearRect(0, 0, gw, gh); glowCx.globalCompositeOperation = 'lighter'; glowCx.lineCap = 'round';
+      cx.globalCompositeOperation = 'lighter'; cx.lineCap = 'round';
+      var proj = function (q) { var X = q[0] * cr - q[2] * sr, Z = q[0] * sr + q[2] * cr, k = 3 / (3 + Z); return [mx + X * sc * k, my - q[1] * sc * k, k]; };
+      for (var i = 0; i < NEURO.length; i++) {
+        var st = NEURO[i], a = eo(seg(u, .3 + st.d * 2.6, 1.0 + st.d * 2.6)); if (a <= 0) continue;
+        var pts = st.p, n = Math.max(2, Math.ceil(pts.length * a)), Pp = [];
+        for (var k = 0; k < n; k++) Pp.push(proj(pts[k]));
+        var dk = (Pp[0][2] + Pp[n - 1][2]) * .5, col = st.c < .38 ? '77,139,255' : st.c < .88 ? '69,237,209' : '220,250,255', al = Math.min(1, a * energy * (dk - .55) * 1.25);
+        if (al <= .01) continue;
+        glowCx.strokeStyle = 'rgba(' + col + ',' + al * .42 + ')'; glowCx.lineWidth = 2.6; glowCx.beginPath(); glowCx.moveTo(Pp[0][0] / 4, Pp[0][1] / 4);
+        cx.strokeStyle = 'rgba(' + col + ',' + al * .42 + ')'; cx.lineWidth = (.5 + .7 * dk) * S; cx.beginPath(); cx.moveTo(Pp[0][0], Pp[0][1]);
+        for (k = 1; k < n; k++) { glowCx.lineTo(Pp[k][0] / 4, Pp[k][1] / 4); cx.lineTo(Pp[k][0], Pp[k][1]); }
+        glowCx.stroke(); cx.stroke();
+        /* pulso de energía que recorre el filamento */
+        if (u > 2 && st.c > .6) {
+          var ph = (u * st.sp * (1 + 1.5 * seg(u, 3, 9.5)) + st.c * 7) % 1, j = Math.floor(ph * (n - 1));
+          if (j < n - 1) { cx.strokeStyle = 'rgba(244,246,250,' + Math.min(1, al * 1.6) + ')'; cx.lineWidth = 2 * S; cx.beginPath(); cx.moveTo(Pp[j][0], Pp[j][1]); cx.lineTo(Pp[j + 1][0], Pp[j + 1][1]); cx.stroke(); }
+        }
+        if (st.c > .9) { cx.fillStyle = 'rgba(244,246,250,' + al + ')'; cx.beginPath(); cx.arc(Pp[n - 1][0], Pp[n - 1][1], 2.2 * S * dk, 0, 7); cx.fill(); }
       }
-      cx.globalCompositeOperation = 'source-over';
-      /* núcleo: la cara de Jeeves */
-      var k5 = eo(seg(u, 1.2, 2.2)), rc = R * .36 * k5;
-      if (k5 > 0) {
-        cx.fillStyle = '#02040A'; cx.beginPath(); cx.arc(0, 0, rc, 0, 7); cx.fill(); cx.strokeStyle = C + '.6)'; cx.lineWidth = 2 * S; cx.stroke();
-        var blink = (u % 3.1 > 2.95) ? .1 : 1, ew = rc * .32, eh = rc * .62 * blink * (1 + beatK * .15);
-        cx.shadowColor = BLUE; cx.shadowBlur = 26 * S; cx.fillStyle = BLUE;
-        [-1, 1].forEach(function (sd) { rr(sd * rc * .3 - ew / 2, -eh / 2, ew, eh, ew / 2); cx.fill(); }); cx.shadowBlur = 0;
-      }
-      cx.restore();
-      /* datos alrededor del holograma */
-      var D = [['RUTA', 'LISTA', -.75], ['OBSTÁCULOS', '0', .75], ['DESTINO', 'MESA 5', 2.35], ['ESTADO', 'EN CAMINO', -2.35]];
-      D.forEach(function (d, k) {
-        var a = eo(seg(u, 3 + k * .45, 3.4 + k * .45)); if (a <= 0) return;
-        var an = d[2], ex = mx + Math.cos(an) * R * 1.08, ey = my + Math.sin(an) * R * 1.08, right = Math.cos(an) > 0, lx2 = ex + (right ? 1 : -1) * R * .22;
-        cx.strokeStyle = 'rgba(69,237,209,' + a * .7 + ')'; cx.lineWidth = 1.2 * S; cx.beginPath(); cx.moveTo(mx + Math.cos(an) * R * 1.0, my + Math.sin(an) * R * 1.0); cx.lineTo(ex, ey); cx.lineTo(lx2, ey); cx.stroke();
-        cx.textAlign = right ? 'left' : 'right'; var tx2 = lx2 + (right ? 6 : -6) * S;
-        font('600', 11 * S, FT); cx.fillStyle = 'rgba(163,173,191,' + a + ')'; cx.fillText(d[0], tx2, ey - 6 * S);
-        font('700', 18 * S, FT); cx.fillStyle = 'rgba(244,246,250,' + a + ')'; var sh = d[1].slice(0, Math.ceil(d[1].length * seg(u, 3.1 + k * .45, 3.6 + k * .45))); cx.fillText(sh, tx2, ey + 17 * S);
+      cx.globalAlpha = Math.min(1, .9 * energy); cx.drawImage(glowCv, 0, 0, W, H); cx.globalAlpha = 1;
+      /* corazón de luz y los ojos de Jeeves que aparecen dentro */
+      var core = cx.createRadialGradient(mx, my, 0, mx, my, R * .55); core.addColorStop(0, 'rgba(180,240,255,' + (.35 * energy) + ')'); core.addColorStop(1, 'rgba(69,237,209,0)');
+      cx.fillStyle = core; cx.beginPath(); cx.arc(mx, my, R * .55, 0, 7); cx.fill();
+      cx.globalCompositeOperation = 'source-over'; cx.lineCap = 'butt';
+      var ek = eo(seg(u, 6.2, 7.2));
+      if (ek > 0) { var ew = R * .13, eh = R * .24 * ((u % 2.6 > 2.48) ? .12 : 1) * (1 + beatK * .2); cx.globalAlpha = ek; cx.shadowColor = BLUE; cx.shadowBlur = 30 * S; cx.fillStyle = '#7FB0FF';
+        [-1, 1].forEach(function (sd) { rr(mx + sd * R * .14 - ew / 2, my - eh / 2, ew, eh, ew / 2); cx.fill(); }); cx.shadowBlur = 0; cx.globalAlpha = 1; }
+      /* datos alrededor */
+      var D = [['RUTA', 'LISTA', -.7], ['OBSTÁCULOS', '0', .62], ['DESTINO', 'MESA 5', 2.52], ['ESTADO', 'EN CAMINO', -2.44]];
+      D.forEach(function (d, kk) {
+        var a2 = eo(seg(u, 3.4 + kk * .45, 3.8 + kk * .45)); if (a2 <= 0) return;
+        var an = d[2], right = Math.cos(an) > 0, ey = my + Math.sin(an) * R * .95, ex = port ? (right ? W - 150 * S : 150 * S) : mx + Math.cos(an) * R * 1.12, lx2 = port ? (right ? W - 140 * S : 140 * S) : ex + (right ? 1 : -1) * R * .18;
+        if (port) ey = my + (Math.sin(an) > 0 ? R * .95 : -R * .95);
+        cx.strokeStyle = 'rgba(69,237,209,' + a2 * .7 + ')'; cx.lineWidth = 1.2 * S; cx.beginPath(); cx.moveTo(mx + Math.cos(an) * R * .9, my + Math.sin(an) * R * .78); cx.lineTo(ex, ey); cx.lineTo(lx2, ey); cx.stroke();
+        cx.textAlign = port ? (right ? 'right' : 'left') : (right ? 'left' : 'right'); var tx2 = port ? (right ? W - 36 * S : 36 * S) : lx2 + (right ? 6 : -6) * S;
+        font('600', 11 * S, FT); cx.fillStyle = 'rgba(163,173,191,' + a2 + ')'; cx.fillText(d[0], tx2, ey - 6 * S);
+        font('700', 18 * S, FT); cx.fillStyle = 'rgba(244,246,250,' + a2 + ')'; cx.fillText(d[1].slice(0, Math.ceil(d[1].length * seg(u, 3.5 + kk * .45, 4 + kk * .45))), tx2, ey + 17 * S);
         cx.textAlign = 'left';
       });
-      /* título y lo que hace */
-      var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .64 : H * .3, al = port ? 'center' : 'left';
-      maskWord('El cerebro', tx, ty, px, u, 4.6, .02, WHITE, al, -.035);
-      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, 4.85, .02, MINT, al, -.035);
+      var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .66 : H * .3, al3 = port ? 'center' : 'left';
+      maskWord('El cerebro', tx, ty, px, u, 4.6, .02, WHITE, al3, -.035);
+      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, 4.85, .02, MINT, al3, -.035);
       var L = ['Piensa la mejor ruta', 'Detecta personas y objetos', 'Te avisa cuando entrega'], fz = Math.min(W * (port ? .045 : .022), 24 * S);
       font('600', fz, FT); cx.textAlign = 'left';
       var lw = 0; L.forEach(function (l) { lw = Math.max(lw, cx.measureText(l).width); });
       var lx = port ? W / 2 - (lw + 28 * S) / 2 : 60 * S, ly = ty + px * 1.06 + (port ? 64 : 70) * S;
-      L.forEach(function (l, k) {
-        var a = eo(seg(u, 6 + k * .8, 6.5 + k * .8)); if (a <= 0) return;
-        var y = ly + k * fz * 1.9;
-        cx.fillStyle = 'rgba(69,237,209,' + a + ')'; cx.beginPath(); cx.arc(lx + 6 * S, y - fz * .32, 5 * S, 0, 7); cx.fill();
-        cx.fillStyle = 'rgba(244,246,250,' + a + ')'; cx.fillText(l, lx + 28 * S + 14 * S * (1 - a), y);
+      L.forEach(function (l, kk) {
+        var a3 = eo(seg(u, 6 + kk * .8, 6.5 + kk * .8)); if (a3 <= 0) return;
+        var y = ly + kk * fz * 1.9;
+        cx.fillStyle = 'rgba(69,237,209,' + a3 + ')'; cx.beginPath(); cx.arc(lx + 6 * S, y - fz * .32, 5 * S, 0, 7); cx.fill();
+        cx.fillStyle = 'rgba(244,246,250,' + a3 + ')'; cx.fillText(l, lx + 28 * S + 14 * S * (1 - a3), y);
       });
       if (BP > -.35 && BP < 0) { cx.fillStyle = 'rgba(244,246,250,' + ei(seg(BP, -.35, 0)) + ')'; cx.fillRect(0, 0, W, H); }
     } },
