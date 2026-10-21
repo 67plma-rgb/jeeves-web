@@ -39,6 +39,19 @@
   var art = window.JeevesArt.create(cv), holo = art.holo, cloudScale = art.cloudScale, PT0 = art.PT0, PD = art.PD, PIECES = art.PIECES, PTS = [], NP = 0;
   var RPATH = art.makePath([[1.2, 2.0], [5, 2.0], [5, 5.55], [6.8, 5.55]]);
   function buildCloud(n) { PTS = art.cloud(n); NP = PTS.length; }
+  /* Foto real de Jeeves recortada en 4 capas (cabeza, dos charolas, base) */
+  var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/[^\/]*$/, '');
+  var CAPA = [1, 2, 3, 4].map(function (n) { var im = new Image(); im.decoding = 'async'; im.onload = function () { if (!playing) render(t); }; im.src = BASE + 'assets/capa-' + n + '.webp'; return im; });
+  var CT = [0, .2616, .439, .686], CHH = [.2616, .1773, .247, .314], CDY = [-.22, -.075, .075, .22];
+  function robot(ox, oy, h, e, alpha, focus) {
+    var w = h * 1280 / 1720, top = oy - h / 2;
+    for (var i = 0; i < 4; i++) {
+      var im = CAPA[i]; if (!im.complete || !im.naturalWidth) continue;
+      cx.globalAlpha = alpha * (focus == null || focus < 0 ? 1 : i === focus ? 1 : .3);
+      cx.drawImage(im, ox - w / 2, top + (CT[i] + CDY[i] * e) * h, w, CHH[i] * h);
+    }
+    cx.globalAlpha = 1; return w;
+  }
   var textReady = 0, dotX = 0;
   function buildText() {
     var oc = document.createElement('canvas'), w = 900, h = 260; oc.width = w; oc.height = h;
@@ -54,7 +67,7 @@
     return [ox + X * scale * k, oy - y * scale * k, k];
   }
 
-  /* ---------- Escenas (120 BPM: cada corte cae en un tiempo) ---------- */
+  /* ---------- Escenas (el corte por compases está más abajo, en CUT) ---------- */
   var SC = [
     { n: 'APERTURA', d: 2.0, dark: true, f: function (u) {
       bg(INK);
@@ -169,7 +182,7 @@
       var back = [MINT, INK, WHITE][st], ink = [INK, MINT, INK][st];
       bg(back);
       var big = BIG[st], lines = L[st], port = H > W, px = Math.min(H * .78, W * .42);
-      if (port) px = Math.min(px, W * (st === 2 ? .3 : .62));
+      if (port) { px = Math.min(px, W * (st === 2 ? .3 : .62)); font('700', px); var bwp = cx.measureText(big).width, room2 = W - 60 * S; if (bwp > room2) px *= room2 / bwp; }
       else {
         font('700', Math.min(W * .045, 38 * S)); var tw = 0; lines.forEach(function (l) { tw = Math.max(tw, cx.measureText(l).width); });
         font('700', px); var bw0 = cx.measureText(big).width, room = W - 100 * S - tw - 50 * S; if (bw0 > room) px *= room / bw0;
@@ -255,18 +268,110 @@
         font('700', 21 * S, FT); cx.fillStyle = '#0F172A'; cx.textAlign = 'center'; cx.fillText('Cotiza por WhatsApp', ox, by2 + (1 - ck) * 20 * S + bh2 * .64);
         font('600', 17 * S, FT); cx.fillStyle = 'rgba(244,246,250,.85)'; cx.fillText('+52 56 3642 2489', ox, by2 + bh2 + 40 * S); cx.textAlign = 'left'; cx.globalAlpha = 1;
       }
+    } },
+    { n: 'FOTO', d: 4.0, dark: true, f: function (u) {
+      bg(INK);
+      var port = H > W, h = Math.min(H * (port ? .58 : .64), W * (port ? 1.0 : .5)), oy = H * (port ? .45 : .44), on = eo(seg(u, .2, 1.6));
+      var g = cx.createRadialGradient(W / 2, oy - h * .1, 0, W / 2, oy, h * .95); g.addColorStop(0, 'rgba(37,99,235,' + (.34 * on) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      cx.save(); cx.translate(W / 2, oy + h / 2); cx.scale(1, .16); cx.fillStyle = 'rgba(69,237,209,' + (.16 * on) + ')'; cx.beginPath(); cx.arc(0, 0, h * .42, 0, 7); cx.fill(); cx.restore();
+      /* se enciende de arriba hacia abajo, siguiendo una línea de luz */
+      var hh = h * (1 + .05 * eio(seg(u, 0, 4))), top = oy - hh / 2, sy = top - 10 * S + (hh + 20 * S) * eio(seg(u, .2, 1.6));
+      cx.save(); cx.beginPath(); cx.rect(0, 0, W, sy); cx.clip(); robot(W / 2, oy, hh, 0, 1); cx.restore();
+      cx.save(); cx.beginPath(); cx.rect(0, sy, W, H); cx.clip(); robot(W / 2, oy, hh, 0, .1); cx.restore();
+      if (u < 1.7) { cx.fillStyle = 'rgba(69,237,209,' + (1 - seg(u, 1.4, 1.7)) + ')'; cx.shadowColor = MINT; cx.shadowBlur = 24 * S; cx.fillRect(W / 2 - hh * .5, sy, hh, 2 * S); cx.shadowBlur = 0; }
+      var k = eo(seg(u, 1.6, 2.2)), px = Math.min(W * (port ? .085 : .05), 44 * S);
+      font('600', 11 * S, FT); cx.textAlign = 'center'; cx.fillStyle = 'rgba(69,237,209,' + k + ')'; cx.fillText('ASÍ SE VE DE VERDAD', W / 2, H - 58 * S - px * 1.2);
+      font('700', px); cx.fillStyle = 'rgba(244,246,250,' + k + ')'; cx.fillText('Conoce a Jeeves.', W / 2, H - 58 * S + 14 * S * (1 - k)); cx.textAlign = 'left';
+    } },
+    { n: 'FRASE', d: 2.0, dark: true, hit: [0, 1], f: function (u) {
+      bg(INK);
+      var port = H > W, px = Math.min(W * (port ? .1 : .075), H * .13), x = 50 * S, y = H * .45;
+      maskWord('Tu equipo atiende.', x, y, px, u, 0, .018, WHITE, 'left', -.035);
+      maskWord('Jeeves reparte.', x, y + px * 1.12, px, u, 1, .02, MINT, 'left', -.035);
+    } },
+    { n: 'CUENTA', d: 2.0, dark: true, hit: [0, .5, 1], f: function (u) {
+      bg(INK);
+      var k = u < .5 ? 0 : u < 1 ? 1 : u < 1.5 ? 2 : 3, lu = u - k * .5;
+      if (k < 3) {
+        var px = Math.min(H * .55, W * .62), sc = 1 + .35 * (1 - eo(seg(lu, 0, .22)));
+        cx.save(); cx.translate(W / 2, H / 2); cx.scale(sc, sc); font('700', px); cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillStyle = k === 1 ? MINT : WHITE; cx.globalAlpha = 1 - .5 * seg(lu, .3, .5); cx.fillText(String(3 - k), 0, px * .04); cx.restore(); cx.globalAlpha = 1; cx.textBaseline = 'alphabetic'; cx.textAlign = 'left';
+        cx.strokeStyle = 'rgba(69,237,209,' + (1 - eo(seg(lu, 0, .45))) + ')'; cx.lineWidth = 3 * S; cx.beginPath(); cx.arc(W / 2, H / 2, Math.min(W, H) * (.2 + .3 * eo(seg(lu, 0, .45))), 0, 7); cx.stroke();
+      } else {
+        /* la línea del inicio vuelve y se cierra en un punto antes del golpe */
+        var p = 1 - ei(seg(lu, 0, .45)), y = H * .52;
+        cx.fillStyle = MINT; cx.fillRect(W / 2 - W * .45 * p, y - 1.5 * S, W * .9 * p, 3 * S);
+        cx.shadowColor = MINT; cx.shadowBlur = 30 * S; cx.fillStyle = WHITE; cx.beginPath(); cx.arc(W / 2, y, 7 * S * (1 + 1.5 * (1 - p)), 0, 7); cx.fill(); cx.shadowBlur = 0;
+      }
+    } },
+    { n: 'CAPAS', d: 4.0, dark: true, hit: [1, 1.75, 2.5, 3.25], f: function (u) {
+      bg(INK);
+      var port = H > W, h = Math.min(H * (port ? .42 : .56), W * (port ? .8 : .42)), ox = port ? W * .3 : W * .36, oy = H * .5;
+      var g = cx.createRadialGradient(ox, oy, 0, ox, oy, h * .9); g.addColorStop(0, 'rgba(37,99,235,.26)'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      var e = eio(seg(u, .05, .95)), k = u < 1 ? -1 : Math.min(3, Math.floor((u - 1) / .75)), w = robot(ox, oy, h, e, 1, k);
+      var NAMES = ['Cabeza', 'Charola de arriba', 'Charola de abajo', 'Base con llantas'], SUB = ['OJOS QUE AVISAN', 'BEBIDAS Y POSTRES', 'PLATOS Y PAQUETES', 'LLANTAS SUAVES'];
+      var px = Math.min(W * (port ? .05 : .034), 30 * S), lx = ox + w * .5 + 34 * S;
+      for (var i = 0; i < 4; i++) {
+        var a = seg(u, 1 + i * .75, 1.25 + i * .75); if (a <= 0) continue;
+        var y = oy - h / 2 + (CT[i] + CHH[i] / 2 + CDY[i] * e) * h, on = i === k, al = eo(a) * (on ? 1 : .4);
+        cx.strokeStyle = 'rgba(69,237,209,' + al + ')'; cx.lineWidth = 1.5 * S; cx.beginPath(); cx.moveTo(ox + w * .3, y); cx.lineTo(ox + w * .3 + (lx - 10 * S - ox - w * .3) * eo(a), y); cx.stroke();
+        cx.fillStyle = 'rgba(69,237,209,' + al + ')'; cx.beginPath(); cx.arc(ox + w * .3, y, 3.5 * S, 0, 7); cx.fill();
+        font('700', px); cx.fillStyle = 'rgba(244,246,250,' + al + ')'; cx.fillText(NAMES[i], lx + 12 * S * (1 - eo(a)), y + px * .1);
+        font('600', 10.5 * S, FT); cx.fillStyle = 'rgba(163,173,191,' + al + ')'; cx.fillText(SUB[i], lx + 12 * S * (1 - eo(a)), y + px * .1 + 18 * S);
+      }
+      var tk = eo(seg(u, .3, .8)); font('600', 11 * S, FT); cx.fillStyle = 'rgba(69,237,209,' + tk + ')'; cx.fillText('CUATRO PIEZAS · UN SOLO ROBOT', 44 * S, 64 * S);
+    } },
+    { n: 'LUGARES', d: 4.0, dark: false, hit: [0, 1.5, 3], f: function (u) {
+      var j = u < 1.5 ? 0 : u < 3 ? 1 : 2, lu = u - [0, 1.5, 3][j], len = [1.5, 1.5, 1.0][j];
+      var bgG = cx.createLinearGradient(0, 0, 0, H); bgG.addColorStop(0, '#F4F6F9'); bgG.addColorStop(1, '#DCE2EA'); cx.fillStyle = bgG; cx.fillRect(0, 0, W, H);
+      var port = H > W, cw = Math.min(W * (port ? 1.0 : .84) / 10, H * (port ? .7 : .74) / 6.2) * (1.02 + .04 * eo(seg(lu, 0, len)));
+      var sp = eio(seg(lu, .05, len - .05)), R = art.along(RPATH, sp);
+      art.diorama({ place: j, cw: cw, ox: W / 2, oy: H * (port ? .45 : .47) - 2.13 * cw, t: u, intro: 9, robot: R, path: RPATH, prog: sp, planA: 1, padK: 1, dest: [3], served: [], pins: [] });
+      var px = Math.min(W * .06, 46 * S);
+      font('600', 11 * S, FT); cx.fillStyle = 'rgba(31,154,134,.9)'; cx.fillText('LLEGA A TODOS LADOS', 44 * S, H - 46 * S - px - 6 * S);
+      maskWord(['Restaurantes.', 'Oficinas.', 'Escuelas.'][j], 44 * S, H - 46 * S, px, lu, 0, .02, '#05070C', 'left', -.03);
     } }
   ];
-  var DUR = 0; SC.forEach(function (s) { s.a = DUR; DUR += s.d; });
+  var ORDER = ['APERTURA', 'FOTO', 'MIRADA', 'FRASE', 'CUENTA', 'IMPACTO', 'SERVICIO', 'PULSO', 'HOLOGRAMA', 'CAPAS', 'RITMO', 'RUTA', 'LUGARES', 'NÚMEROS', 'VELOCIDAD LUZ', 'JEEVES'];
+  SC = ORDER.map(function (n) { for (var i = 0; i < SC.length; i++) if (SC[i].n === n) return SC[i]; });
+  var IX = {}; SC.forEach(function (sc, i) { IX[sc.n] = i; });
+  /* ---------- Corte al ritmo: 120.98 BPM, 8 compases de subida y drop en "JEEVES" ----------
+     [beat inicio, beat fin, escena, u inicio, u fin]  (beats contados desde el drop) */
+  var BEAT = 60 / 120.98, PRE = 32, POST = 72;
+  var CUT = [[-32, -24, 'APERTURA', 0, 2], [-24, -16, 'FOTO', 0, 4], [-16, -8, 'MIRADA', 0, 2], [-8, -4, 'FRASE', 0, 2], [-4, 0, 'CUENTA', 0, 2],
+    [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'PULSO', 0, 1.5], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'CAPAS', 0, 4],
+    [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 48, 'LUGARES', 0, 4], [48, 49, 'NÚMEROS', 0, .75], [49, 50, 'NÚMEROS', .75, 1.5], [50, 52, 'NÚMEROS', 1.5, 2.5],
+    [52, 56, 'VELOCIDAD LUZ', 0, 1.5], [56, 60, 'JEEVES', 0, 2.4], [60, 60 + 2.6 / BEAT, 'JEEVES', 2.4, 5], [60 + 2.6 / BEAT, POST, 'JEEVES', 4.99, 4.99]]
+    .map(function (c) { return [(c[0] + PRE) * BEAT, (c[1] + PRE) * BEAT, IX[c[2]], c[3], c[4]]; });
+  var DUR = (PRE + POST) * BEAT;
+  SC.forEach(function (sc) { sc.a = 0; }); CUT.forEach(function (c) { if (!SC[c[2]].a && c[2]) SC[c[2]].a = c[0]; });
+  function locate(tv) {
+    for (var i = 0; i < CUT.length; i++) { var c = CUT[i]; if (tv < c[1] || i === CUT.length - 1) { var k = cl((tv - c[0]) / (c[1] - c[0])); return [c[2], c[3] + (c[4] - c[3]) * k]; } }
+  }
+  function tvOf(name, u) { for (var i = 0; i < CUT.length; i++) { var c = CUT[i]; if (c[2] === IX[name] && u >= c[3] && u <= c[4] && c[4] > c[3]) return c[0] + (u - c[3]) / (c[4] - c[3]) * (c[1] - c[0]); } return 0; }
+  /* golpe de zoom: fuerte en cada corte y suave en cada bombo del drop */
+  var CUTB = CUT.map(function (c) { return Math.round(c[0] / BEAT - PRE); });
+  function pump(tv) {
+    var b = tv / BEAT - PRE, v = 0;
+    for (var k = Math.floor(b) - 2; k <= Math.floor(b); k++) { var dt = (b - k) * BEAT; if (dt < 0) continue;
+      var a = CUTB.indexOf(k) >= 0 ? (k >= 0 && k <= 60 ? .05 : .02) : (k > 0 && k < 60 ? .013 : 0); v += a * Math.exp(-dt / .17); }
+    return v;
+  }
   var HITS = [];
-  SC.forEach(function (s) { (s.hit || [0]).forEach(function (h) { HITS.push(s.a + h); }); });
+  CUT.forEach(function (c) { if (c[4] <= c[3]) return; (SC[c[2]].hit || [0]).forEach(function (h) { if (h >= c[3] && h < c[4]) HITS.push(c[0] + (h - c[3]) / (c[4] - c[3]) * (c[1] - c[0])); }); });
 
   /* ---------- Postproducción: grano, viñeta, franjas, temblor y choque de color ---------- */
   var grain = document.createElement('canvas'); grain.width = grain.height = 192;
   (function () { var g = grain.getContext('2d'), im = g.createImageData(192, 192); for (var i = 0; i < im.data.length; i += 4) { var v = Math.random() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } g.putImageData(im, 0, 0); })();
   var buf = document.createElement('canvas'), bx = buf.getContext('2d');
   function shakeAmt(t) { var a = 0; HITS.forEach(function (h) { var d = t - h; if (d >= 0 && d < .6) a += Math.exp(-d * 9); }); return Math.min(1.4, a); }
-  function bars(t) { var o = 1 - eo(seg(t, 1.6, 2.1)), w = SC[9].a, inW = eo(seg(t, w, w + .4)) * (1 - eo(seg(t, SC[10].a + .05, SC[10].a + .5))); return Math.max(o, inW); }
+  function bars(i, u) {
+    var n = SC[i].n;
+    if (n === 'APERTURA') return 1 - eo(seg(u, 1.6, 2.1));
+    if (n === 'VELOCIDAD LUZ') return eo(seg(u, 0, .4));
+    if (n === 'JEEVES') return 1 - eo(seg(u, .05, .5));
+    return 0;
+  }
 
   function hud(i, t, dark) {
     var c = dark ? 'rgba(244,246,250,.6)' : 'rgba(5,7,12,.55)', m = 20 * S, l = 16 * S;
@@ -281,10 +386,9 @@
   }
 
   function render(t) {
-    var i = 0; while (i < SC.length - 1 && t >= SC[i + 1].a) i++;
-    var s = SC[i], u = t - s.a, sh = reduce ? 0 : shakeAmt(t);
+    var L = locate(t), i = L[0], s = SC[i], u = L[1], sh = reduce ? 0 : shakeAmt(t);
     cx.setTransform(1, 0, 0, 1, 0, 0); cx.textAlign = 'left'; cx.globalAlpha = 1; cx.shadowBlur = 0; cx.globalCompositeOperation = 'source-over';
-    var punch = 1 + .05 * (1 - eo(seg(u, 0, .35)));
+    var punch = (1 + .05 * (1 - eo(seg(u, 0, .35)))) * (1 + (reduce ? 0 : pump(t)));
     cx.save();
     cx.translate(W / 2 + (rnd(Math.floor(t * 60)) - .5) * 22 * S * sh, H / 2 + (rnd(Math.floor(t * 60) + 7) - .5) * 22 * S * sh);
     cx.scale(punch, punch); cx.translate(-W / 2, -H / 2);
@@ -304,95 +408,42 @@
     cx.fillStyle = cx.createPattern(grain, 'repeat'); cx.save(); cx.translate(-gx, -gy); cx.fillRect(gx, gy, W, H); cx.restore();
     cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
     /* franjas de cine */
-    var bh = H * .11 * bars(t); if (bh > .5) { cx.fillStyle = '#000'; cx.fillRect(0, 0, W, bh); cx.fillRect(0, H - bh, W, bh); }
+    var bh = H * .11 * bars(i, u); if (bh > .5) { cx.fillStyle = '#000'; cx.fillRect(0, 0, W, bh); cx.fillRect(0, H - bh, W, bh); }
     hud(i, t, s.dark);
-    if (u < .05 && i > 0) { cx.fillStyle = s.dark ? 'rgba(244,246,250,.45)' : 'rgba(5,7,12,.35)'; cx.fillRect(0, 0, W, H); }
-    var on = t > SC[10].a + 3.0; if (on !== ctaOn) { ctaOn = on; box.classList.toggle('cta-on', on); cta.tabIndex = on ? 0 : -1; cta.setAttribute('aria-hidden', String(!on)); }
+    if (i > 0 && t - SC[i].a < .03 && t >= SC[i].a) { cx.fillStyle = s.dark ? 'rgba(244,246,250,.45)' : 'rgba(5,7,12,.35)'; cx.fillRect(0, 0, W, H); }
+    var on = s.n === 'JEEVES' && u > 3.0; if (on !== ctaOn) { ctaOn = on; box.classList.toggle('cta-on', on); cta.tabIndex = on ? 0 : -1; cta.setAttribute('aria-hidden', String(!on)); }
   }
   var ctaOn = null;
 
-  /* ---------- Sonido sintetizado (opcional, al ritmo de 120 BPM) ---------- */
-  var ac = null, master = null, noiseBuf = null, soundOn = false;
-  function graph(ctx) {
-    ac = ctx; var comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
-    master = ac.createGain(); master.gain.value = .75; master.connect(comp); comp.connect(ac.destination);
-    noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  /* ---------- Sonido: pista original pregrabada, sincronizada con el corte ----------
+     El reloj del audio manda: la imagen sigue al sonido para que cada golpe caiga en su lugar. */
+  var ac = null, abuf = null, src = null, gain = null, soundOn = false, aStart = 0, loading = false;
+  function startSrc() {
+    if (!ac || !abuf) return;
+    if (src) { try { src.stop(); } catch (e) {} src.disconnect(); }
+    src = ac.createBufferSource(); src.buffer = abuf; src.loop = true; src.loopStart = 0; src.loopEnd = Math.min(DUR, abuf.duration);
+    src.connect(gain); t = 0; prevT = -1; aStart = ac.currentTime + .06; src.start(aStart, 0);
   }
-  function initAudio() {
-    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
-    graph(new AC()); return true;
-  }
-  /* base musical: bajo y acordes (La menor · Fa · Do · Sol) */
-  var CH = [[110, [220, 261.63, 329.63]], [87.31, [174.61, 220, 261.63]], [130.81, [261.63, 329.63, 392]], [98, [196, 246.94, 293.66]]];
-  function pad(t0, fr, dur, vol) {
-    fr.forEach(function (f) { [-7, 7].forEach(function (dt) {
-      var o = ac.createOscillator(), fl = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt;
-      fl.type = 'lowpass'; fl.frequency.setValueAtTime(700, t0); fl.frequency.linearRampToValueAtTime(1800, t0 + dur * .6);
-      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .3); g.gain.setValueAtTime(vol, t0 + dur - .35); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(fl); fl.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .05);
-    }); });
-  }
-  function bass(t0, f, len) {
-    var o = ac.createOscillator(), o2 = ac.createOscillator(), fl = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2;
-    fl.type = 'lowpass'; fl.Q.value = 4; fl.frequency.setValueAtTime(1100, t0); fl.frequency.exponentialRampToValueAtTime(160, t0 + .22);
-    env(g, t0, .3, .006, len || .24); o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(master); o.start(t0); o2.start(t0); o.stop(t0 + (len || .24) + .1); o2.stop(t0 + (len || .24) + .1);
-  }
-  function env(g, t0, peak, a, dcy) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + dcy); }
-  function kick(t0, big) {
-    var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
-    o.frequency.setValueAtTime(big ? 120 : 150, t0); o.frequency.exponentialRampToValueAtTime(big ? 32 : 45, t0 + (big ? .5 : .14));
-    env(g, t0, big ? 1 : .8, .004, big ? 1.1 : .32); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 1.3);
-  }
-  function noise(t0, type, freq, q, peak, dcy) {
-    var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf;
-    f.type = type; f.frequency.value = freq; f.Q.value = q || 1; env(g, t0, peak, .003, dcy);
-    s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dcy + .1);
-  }
-  function impact(t0) { kick(t0, true); noise(t0, 'lowpass', 500, .7, .9, 1.4); noise(t0, 'highpass', 3000, .7, .25, .25); }
-  function riser(t0, dur) {
-    var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf; s.loop = true;
-    f.type = 'bandpass'; f.Q.value = 6; f.frequency.setValueAtTime(300, t0); f.frequency.exponentialRampToValueAtTime(7000, t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(.45, t0 + dur); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + .05);
-    s.connect(f); f.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur + .1);
-  }
-  function blip(t0, fr) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = fr; env(g, t0, .18, .005, .18); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + .3); }
-  /* Partitura: [tiempo, sonido] */
-  var SCORE = [];
-  (function () {
-    var A = SC.map(function (s) { return s.a; });
-    SCORE.push([0, 'riser2']);
-    for (var b = 0; b < 6; b++) SCORE.push([A[1] + b * .25, b === 0 ? 'impact' : 'kickbig']);
-    for (var t = A[2]; t < A[9] - .01; t += .5) { SCORE.push([t, 'kick']); if (t >= A[3]) SCORE.push([t + .25, 'hat']); if (Math.round((t - A[2]) / .5) % 2 === 1) SCORE.push([t, 'clap']); }
-    SCORE.push([A[4] + 3.2, 'impact']); PT0.forEach(function (p0, n) { SCORE.push([A[4] + p0 + PD * .8, 'tick' + n]); });
-    SCORE.push([A[6] + 2.85, 'blip1.5']);
-    [0, .75, 1.5].forEach(function (h) { SCORE.push([A[7] + h, 'blip' + h]); });
-    SCORE.push([A[9], 'riser1']); SCORE.push([A[10], 'impact']); SCORE.push([A[10] + 2.4, 'impact']);
-    for (var bar = A[2], bi = 0; bar < A[9] - .6; bar += 2, bi++) SCORE.push([bar, 'bar' + (bi % 4)]);
-    SCORE.push([A[10], 'finale']);
-  })();
-  function play(name, t0) {
-    if (name.indexOf('bar') === 0) { var ch = CH[+name.slice(3)]; pad(t0, ch[1], 2.05, .02); for (var q = 0; q < 4; q++) bass(t0 + q * .5 + .25, ch[0]); bass(t0, ch[0] / 2, .4); return; }
-    if (name === 'finale') { pad(t0 + .02, [220, 261.63, 329.63, 493.88], 4.8, .028); bass(t0, 55, 2.6); return; }
-    if (name === 'kick') kick(t0); else if (name === 'kickbig') { kick(t0); noise(t0, 'highpass', 2500, 1, .2, .12); }
-    else if (name === 'hat') noise(t0, 'highpass', 7500, 1, .12, .05);
-    else if (name === 'clap') noise(t0, 'bandpass', 1600, 1.2, .35, .14);
-    else if (name === 'impact') impact(t0);
-    else if (name === 'riser1') riser(t0, 1.45); else if (name === 'riser2') riser(t0, 1.95);
-    else if (name.indexOf('tick') === 0) { noise(t0, 'highpass', 4200, 2, .22, .04); blip(t0, 440 * Math.pow(2, (+name.slice(4)) / 7)); }
-    else if (name.indexOf('blip') === 0) blip(t0, [880, 1175, 1568][[0, .75, 1.5].indexOf(+name.slice(4))] || 880);
-  }
-  function audioStep(t0, t1) {
-    if (!soundOn || !ac) return;
-    var now = ac.currentTime + .03;
-    SCORE.forEach(function (e) { if (e[0] > t0 && e[0] <= t1) play(e[1], now); });
+  function setLabel() {
+    sbtn.setAttribute('aria-pressed', String(soundOn)); sbtn.setAttribute('aria-label', soundOn ? 'Silenciar el reel' : 'Activar sonido del reel');
+    sbtn.querySelector('span').textContent = loading ? 'Cargando…' : soundOn ? 'Sonido' : 'Activar sonido';
   }
   sbtn.addEventListener('click', function () {
-    if (!ac && !initAudio()) return;
-    soundOn = !soundOn; if (soundOn && ac.state === 'suspended') ac.resume();
-    sbtn.setAttribute('aria-pressed', String(soundOn)); sbtn.setAttribute('aria-label', soundOn ? 'Silenciar el reel' : 'Activar sonido del reel');
-    sbtn.querySelector('span').textContent = soundOn ? 'Sonido' : 'Activar sonido';
-    if (soundOn && !want) { want = true; sync(); }
-    if (soundOn) { t = 0; prevT = -1; }
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (!ac) { ac = new AC(); gain = ac.createGain(); gain.gain.value = .9; gain.connect(ac.destination); }
+    soundOn = !soundOn;
+    if (soundOn) {
+      if (ac.state === 'suspended') ac.resume();
+      if (!want) { want = true; sync(); }
+      if (abuf) startSrc();
+      else if (!loading) {
+        loading = true; setLabel();
+        fetch(BASE + 'assets/reel-musica.mp3').then(function (r) { return r.arrayBuffer(); }).then(function (data) {
+          ac.decodeAudioData(data, function (b) { abuf = b; loading = false; setLabel(); if (soundOn) startSrc(); }, function () { loading = false; soundOn = false; setLabel(); });
+        }).catch(function () { loading = false; soundOn = false; setLabel(); });
+      }
+    } else if (src) { try { src.stop(); } catch (e) {} src = null; }
+    setLabel();
   });
 
   /* ---------- Reproducción ---------- */
@@ -404,11 +455,12 @@
     buildCloud(W < 900 ? 2300 : 3600); textReady = 0;
     render(t);
   }
-  var t = reduce ? SC[10].a + 4 : 0, prevT = -1, playing = false, want = !reduce, vis = false, last = 0, raf = 0;
+  var t = reduce ? tvOf('JEEVES', 4.2) : 0, prevT = -1, playing = false, want = !reduce, vis = false, last = 0, raf = 0;
   function frame(now) {
-    var dt = Math.min((now - last) / 1000, .1); last = now; t += dt;
+    var dt = Math.min((now - last) / 1000, .1); last = now;
+    if (soundOn && src && ac && ac.state === 'running') t = Math.max(0, ac.currentTime - aStart) % DUR; else t += dt;
     if (t >= DUR) { t = 0; prevT = -1; }
-    audioStep(prevT, t); prevT = t;
+    prevT = t;
     render(t); if (playing) raf = requestAnimationFrame(frame);
   }
   function sync() {
@@ -425,12 +477,5 @@
   else { vis = true; }
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { textReady = 0; size(); sync(); });
   size(); sync();
-  function renderAudio(sr) {
-    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; sr = sr || 48000;
-    var keep = [ac, master, noiseBuf], off = new OAC(2, Math.ceil(sr * DUR), sr);
-    graph(off); SCORE.forEach(function (e) { play(e[1], Math.max(.001, e[0])); });
-    ac = keep[0]; master = keep[1]; noiseBuf = keep[2];
-    return off.startRendering();
-  }
-  window.JeevesReel = { seek: function (x) { t = x; prevT = x; render(t); }, dur: DUR, scenes: SC.map(function (s) { return [s.n, s.a]; }), renderAudio: renderAudio, resize: size };
+  window.JeevesReel = { seek: function (x) { t = x; prevT = x; render(t); }, dur: DUR, beat: BEAT, pre: PRE, scenes: SC.map(function (s) { return [s.n, s.a]; }), resize: size };
 })();
