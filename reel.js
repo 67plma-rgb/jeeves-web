@@ -523,7 +523,7 @@
       [0, 4, 'IMPACTO', 0, 2], [4, 8, 'SERVICIO', 0, 1.5], [8, 12, 'RÁFAGA', 0, 2], [12, 16, 'HOLOGRAMA', 0, 3.2], [16, 20, 'HOLOGRAMA', 3.2, 4], [20, 28, 'ESTRELLA', 0, 4],
       [28, 32, 'RITMO', 0, 1.5], [32, 40, 'RUTA', 0, 3.5], [40, 44, 'PULSO', 0, 1.5], [44, 48, 'BENEFICIOS', 0, 2]].concat(TAIL)
   };
-  var RAW = CUTS[window.JEEVES_CUT] || CUTS.web, PRE = -RAW[0][0];
+  var RAW = CUTS[window.JEEVES_CUT] || CUTS.video, PRE = -RAW[0][0];
   var CUT = RAW
     .map(function (c) { return [(c[0] + PRE) * BEAT, (c[1] + PRE) * BEAT, IX[c[2]], c[3], c[4]]; });
   var DUR = (PRE + POST) * BEAT;
