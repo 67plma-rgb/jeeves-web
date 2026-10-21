@@ -12,8 +12,10 @@
   (function intro() {
     var el = $('#intro');
     var force = /[?&]intro\b/.test(location.search), seen = false;
+    /* Quien llega con un ancla o desde un anuncio va directo al contenido */
+    var direct = !!location.hash || /[?&](utm_[a-z]+|fbclid|gclid)=/.test(location.search);
     try { seen = !!sessionStorage.getItem('jv-intro'); } catch (e) {}
-    if (!el || (seen && !force)) { if (el) el.remove(); ready(); return; }
+    if (!el || ((seen || direct) && !force)) { if (el) el.remove(); ready(); return; }
     try { sessionStorage.setItem('jv-intro', '1'); } catch (e) {}
     doc.classList.add('intro');
     var lts = $$('.lt', el), word = $('.i-word', el), fx = $('.i-fx', el), timers = [], done = false;
@@ -42,7 +44,7 @@
     }
     function start() {
       /* La línea guía cruza la pantalla y cada letra aparece cuando el punto pasa por ella */
-      var RUN = 2600, T0 = 250, vw = window.innerWidth;
+      var RUN = 1200, T0 = 150, vw = window.innerWidth;
       at(function () { add('run'); }, T0);
       lts.forEach(function (l) {
         var r = l.getBoundingClientRect(), x = (r.left + r.width * .5) / vw;
@@ -51,26 +53,23 @@
         for (var j = 0; j < 18; j++) { t = (lo + hi) / 2; var e = 3 * (1 - t) * t * t * 1 + t * t * t; if (e < k) lo = t; else hi = t; }
         at(function () { l.classList.add('on'); }, T0 + t * RUN - 60);
       });
-      at(function () { word.classList.add('slam'); }, 3250);
-      at(pum, 3870);
-      at(function () { add('f-on'); }, 4250);
-      at(function () { add('f-open'); }, 4850);
-      at(function () { add('f-blink'); }, 6050);
-      at(function () { el.classList.remove('f-blink'); add('f-happy'); }, 6180);
-      at(finish, 7250);
+      at(function () { word.classList.add('slam'); }, 1450);
+      at(pum, 1750);
+      at(function () { add('f-on'); }, 1950);
+      at(function () { add('f-open'); }, 2250);
+      at(function () { add('f-blink'); }, 2700);
+      at(function () { el.classList.remove('f-blink'); add('f-happy'); }, 2800);
+      at(finish, 3200);
     }
     (document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 900); })]) : Promise.resolve()).then(function () { requestAnimationFrame(start); });
   })();
 
   /* ---------- Navegación ---------- */
   var nav = $('#nav'), menuBtn = $('.menu-btn'), menu = $('#menu');
-  var themed = $$('[data-theme]'), lastY = window.scrollY, ticking = false;
+  var themed = $$('[data-theme]'), ticking = false;
   function onScroll() {
     var y = window.scrollY;
     nav.classList.toggle('scrolled', y > 8);
-    if (!doc.classList.contains('menu-open')) nav.classList.toggle('hide', y > 480 && y > lastY + 2);
-    if (y < lastY - 2) nav.classList.remove('hide');
-    lastY = y;
     var probe = 32, dark = false;
     for (var i = 0; i < themed.length; i++) {
       var r = themed[i].getBoundingClientRect();
