@@ -511,3 +511,34 @@ html.intro,html.intro body{overflow:hidden}
   .anat-bar{width:auto}
 }
 @media (prefers-reduced-motion:reduce){.anat{height:auto}.anat-pin{position:relative;height:auto;min-height:100vh}}
+
+/* ---------- Capas: la foto real se separa con el scroll ---------- */
+.layers{position:relative;height:380vh;background:var(--porcelain);color:var(--ink)}
+.lay-pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.lay-word{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;font:700 clamp(7rem,27vw,26rem)/.8 var(--f-display);letter-spacing:-.06em;color:var(--ink);opacity:.055;white-space:nowrap;pointer-events:none;user-select:none}
+.lay-copy{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:center;gap:var(--s6);pointer-events:none}
+.lay-eye{font:600 .78rem/1 var(--f-text);letter-spacing:.16em;text-transform:uppercase;color:var(--blue);margin:0 0 var(--s3)}
+.lay-head h2{font-size:clamp(2.4rem,5vw,4.4rem);letter-spacing:-.045em;line-height:.98;max-width:9ch}
+.lay-list{list-style:none;margin:0;padding:0;max-width:300px;display:grid;gap:4px}
+.lay-list li{padding:10px 0 10px 18px;border-left:2px solid var(--line);opacity:.36;transition:opacity .5s var(--ease),border-color .5s var(--ease)}
+.lay-list li.on{opacity:1;border-color:var(--blue)}
+.lay-list h3{font-size:1.08rem;letter-spacing:-.02em}
+.lay-list p{margin:4px 0 0;color:var(--ink-2);font-size:.92rem;line-height:1.45;max-height:0;overflow:hidden;opacity:0;transition:max-height .5s var(--ease),opacity .4s}
+.lay-list li.on p{max-height:4.5em;opacity:1}
+.lay-stack{--H:min(56vh,56svh);--e:0;position:absolute;z-index:1;top:50%;left:68%;width:calc(var(--H)*1280/1720);height:var(--H);transform:translate(-50%,-50%);filter:drop-shadow(0 30px 40px rgba(15,23,42,.12))}
+.lay-stack img{position:absolute;left:0;top:calc(var(--t)*1%);width:100%;height:auto;max-width:none;transform:translate3d(0,calc(var(--e)*var(--d)*var(--H)),0);transition:opacity .5s var(--ease),filter .5s var(--ease);will-change:transform}
+.lay-stack.focus img{opacity:.18;filter:saturate(.4)}
+.lay-stack.focus img.on{opacity:1}
+@media (max-width:720px){
+  .layers{height:340vh}
+  .lay-copy{justify-content:flex-start;gap:var(--s4);padding-top:calc(84px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+  .lay-head h2{font-size:clamp(2rem,9vw,2.6rem);max-width:none}
+  .lay-stack{--H:min(42vh,42svh);left:50%;top:53%}
+  .lay-list{margin-top:auto;max-width:none;display:block;min-height:5.2em;padding:14px 16px;border-radius:var(--r-md);background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--shadow),inset 0 0 0 1px var(--line)}
+  .lay-list li{display:none;padding:0;border:0;opacity:1}
+  .lay-list li.on{display:block}
+  .lay-list:not(.has){opacity:0}
+  .lay-list{transition:opacity .4s var(--ease)}
+  .lay-list li p{max-height:none;opacity:1}
+}
+@media (prefers-reduced-motion:reduce){.layers{height:auto}.lay-pin{position:relative;height:auto;min-height:100vh}.lay-stack{--e:.6}.lay-list li{opacity:1}.lay-list li p{max-height:none;opacity:1}.lay-stack img{transition:none}}

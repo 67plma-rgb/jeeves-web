@@ -154,6 +154,31 @@
     }).observe(cv);
   })();
 
+  /* ---------- Capas: la foto real se separa pieza por pieza ---------- */
+  (function layers() {
+    var sec = $('#capas'); if (!sec || reduce) return;
+    var stack = $('.lay-stack', sec), imgs = $$('img', stack), items = $$('.lay-list li', sec), list = $('.lay-list', sec), cur = -1, vis = false, raf = 0, last = '';
+    function clamp(v) { return Math.max(0, Math.min(1, v)); }
+    function ease(t) { return t * t * (3 - 2 * t); }
+    function prog() { var r = sec.getBoundingClientRect(); return clamp(-r.top / Math.max(1, r.height - window.innerHeight)); }
+    function draw(p) {
+      var e = ease(clamp((p - .04) / .3)), on = p < .36 ? -1 : Math.min(3, Math.floor((p - .36) / .16));
+      stack.style.setProperty('--e', e.toFixed(3));
+      var key = on + '';
+      if (key !== last) {
+        last = key; stack.classList.toggle('focus', on >= 0);
+        imgs.forEach(function (im, i) { im.classList.toggle('on', i === on); });
+        items.forEach(function (li, i) { li.classList.toggle('on', i === on); });
+        if (list) list.classList.toggle('has', on >= 0);
+      }
+    }
+    function loop() { var t = prog(); cur = cur < 0 ? t : cur + (t - cur) * .14; draw(cur); raf = vis && Math.abs(t - cur) > 1e-3 ? requestAnimationFrame(loop) : 0; }
+    window.addEventListener('scroll', function () { if (vis && !raf) raf = requestAnimationFrame(loop); }, { passive: true });
+    window.addEventListener('resize', function () { cur = prog(); draw(cur); });
+    cur = prog(); draw(cur);
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { vis = e[0].isIntersecting; if (vis && !raf) raf = requestAnimationFrame(loop); }).observe(sec);
+  })();
+
   /* ---------- Anatomía: el modelo original se arma con el scroll ---------- */
   (function anatomy() {
     var sec = $('#anatomia'), cv = $('#anatCv'); if (!sec || !cv || !window.JeevesArt) return;
