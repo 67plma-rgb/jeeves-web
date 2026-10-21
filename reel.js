@@ -68,17 +68,13 @@
   }
 
 
-  /* ---------- Cerebro de Jeeves: holograma de red neuronal ----------
-     Filamentos que siguen un campo de flujo dentro de un volumen con forma de cerebro (dos hemisferios). */
+  /* ---------- Mente de Jeeves: nube de partículas de luz azul ----------
+     Puntos que orbitan un centro denso; cada uno es una función del tiempo (exacto al exportar cuadro a cuadro). */
   var NEURO = (function () {
-    function vol(x, y, z) { var a = Math.pow(x / 1.0, 2) + Math.pow((y - .05) / .66, 2), l = a + Math.pow((z + .3) / .42, 2), r = a + Math.pow((z - .3) / .42, 2); return Math.min(l, r) + (y < -.5 ? 9 : 0) + (Math.abs(z) < .04 ? 9 : 0); }
-    function field(x, y, z) { var fx = Math.sin(y * 3.1 + z * 1.7) + .6 * Math.sin(z * 5.3 - x * 2.1), fy = Math.sin(z * 2.7 + x * 2.3) + .6 * Math.sin(x * 4.7 + y * 1.3), fz = Math.sin(x * 2.9 + y * 2.2) + .6 * Math.sin(y * 5.1 - z * 1.9); var l = Math.hypot(fx, fy, fz) || 1; return [fx / l, fy / l, fz / l]; }
-    var out = [], tries = 0;
-    while (out.length < 640 && tries < 40000) {
-      tries++; var x = rnd(tries * 1.3) * 2 - 1, y = rnd(tries * 2.7 + 3) * 1.6 - .75, z = rnd(tries * 3.9 + 7) * 1.6 - .8; if (vol(x, y, z) > 1) continue;
-      var pts = [[x, y, z]], st = .03 + .022 * rnd(tries), n = 5 + Math.floor(rnd(tries * 5) * 7);
-      for (var k = 0; k < n; k++) { var f = field(x, y, z); x += f[0] * st; y += f[1] * st; z += f[2] * st; var v = vol(x, y, z); if (v > 1) { var q = 1 / Math.sqrt(v); x *= q; y = (y - .05) * q + .05; z *= q; } pts.push([x, y, z]); }
-      out.push({ p: pts, d: Math.min(1, Math.hypot(pts[0][0], pts[0][1], pts[0][2]) / 1.1), c: rnd(tries * 9.1), sp: .4 + rnd(tries * 4.4) });
+    var out = [];
+    for (var i = 0; i < 2600; i++) {
+      var r = Math.pow(rnd(i * 1.7 + 1), 1.35) * 1.05, th = rnd(i * 2.9 + 2) * 6.2832, ph = Math.acos(2 * rnd(i * 4.3 + 3) - 1);
+      out.push({ r: r, th: th, ph: ph, w: (.35 + 1.1 * (1 - Math.min(1, r))) * (rnd(i * 6.1) < .5 ? 1 : -.6), c: rnd(i * 9.1 + 5), sz: .8 + rnd(i * 7.7) * 1.4, d: rnd(i * 3.3 + 9), w2: 1 + rnd(i * 5.5) * 2 });
     }
     return out;
   })();
@@ -458,28 +454,22 @@
       var last = BP >= -4 && BP < 0, fr = BP - Math.floor(BP), beatK = last ? (.6 + (BP + 4) * .3) * Math.exp(-fr * 5) : 0;
       var flick = .88 + .12 * Math.sin(u * 23) * Math.sin(u * 7.3), energy = (.5 + .5 * eo(seg(u, .4, 1.4))) * flick + beatK * .6;
       var g = cx.createRadialGradient(mx, my, 0, mx, my, R * 1.9); g.addColorStop(0, 'rgba(37,99,235,' + (.2 * energy) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-      var rot = -.7 + u * .45, cr = Math.cos(rot), sr = Math.sin(rot), sc = R * (1 + beatK * .05) * (.9 + .1 * eo(seg(u, 0, 1.5)));
-      var gw = Math.max(1, Math.round(W / 4)), gh = Math.max(1, Math.round(H / 4)); if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
-      glowCx.setTransform(1, 0, 0, 1, 0, 0); glowCx.clearRect(0, 0, gw, gh); glowCx.globalCompositeOperation = 'lighter'; glowCx.lineCap = 'round';
+      var sc = R * 1.3 * (1 + beatK * .06) * (.92 + .08 * eo(seg(u, 0, 1.5)));
       cx.globalCompositeOperation = 'lighter'; cx.lineCap = 'round';
-      var proj = function (q) { var X = q[0] * cr - q[2] * sr, Z = q[0] * sr + q[2] * cr, k = 3 / (3 + Z); return [mx + X * sc * k, my - q[1] * sc * k, k]; };
+      var place = function (p, t) {
+        var ang = p.th + p.w * t, rr = p.r * (1 + .06 * Math.sin(t * p.w2 + p.c * 9)), sp = Math.sin(p.ph);
+        var x = rr * sp * Math.cos(ang), z = rr * sp * Math.sin(ang), y = rr * Math.cos(p.ph) + .04 * Math.sin(t * 1.3 + p.c * 6);
+        var k = 3 / (3 + z); return [mx + x * sc * k, my - y * sc * k * .92, k];
+      };
       for (var i = 0; i < NEURO.length; i++) {
-        var st = NEURO[i], a = eo(seg(u, .02 + st.d * .9, .4 + st.d * .9)); if (a <= 0) continue;
-        var pts = st.p, n = Math.max(2, Math.ceil(pts.length * a)), Pp = [];
-        for (var k = 0; k < n; k++) Pp.push(proj(pts[k]));
-        var dk = (Pp[0][2] + Pp[n - 1][2]) * .5, col = st.c < .38 ? '77,139,255' : st.c < .88 ? '69,237,209' : '220,250,255', al = Math.min(1, a * energy * (dk - .55) * 1.25);
+        var p = NEURO[i], a = eo(seg(u, p.d * .7, .5 + p.d * .7)); if (a <= 0) continue;
+        var e = 1 - a, q0 = place(p, u), q1 = place(p, u - .012);
+        var X = q0[0] + (mx - q0[0]) * 0 + Math.cos(p.th * 3) * e * R * 1.6, Y = q0[1] + Math.sin(p.th * 5) * e * R * 1.2;
+        var dx = q1[0] - q0[0], dy = q1[1] - q0[1];
+        var col = p.c < .55 ? '120,170,255' : p.c < .9 ? '80,235,215' : '235,250,255', al = Math.min(1, a * energy * (.35 + .65 * (1 - p.r / 1.1)) * (.6 + .4 * q0[2]) * 1.15);
         if (al <= .01) continue;
-        glowCx.strokeStyle = 'rgba(' + col + ',' + al * .42 + ')'; glowCx.lineWidth = 2.6; glowCx.beginPath(); glowCx.moveTo(Pp[0][0] / 4, Pp[0][1] / 4);
-        cx.strokeStyle = 'rgba(' + col + ',' + al * .42 + ')'; cx.lineWidth = (.5 + .7 * dk) * S; cx.beginPath(); cx.moveTo(Pp[0][0], Pp[0][1]);
-        for (k = 1; k < n; k++) { glowCx.lineTo(Pp[k][0] / 4, Pp[k][1] / 4); cx.lineTo(Pp[k][0], Pp[k][1]); }
-        glowCx.stroke(); cx.stroke();
-        if (u > .6 && st.c > .6) {
-          var ph = (u * st.sp * 2.2 + st.c * 7) % 1, j = Math.floor(ph * (n - 1));
-          if (j < n - 1) { cx.strokeStyle = 'rgba(244,246,250,' + Math.min(1, al * 1.6) + ')'; cx.lineWidth = 2 * S; cx.beginPath(); cx.moveTo(Pp[j][0], Pp[j][1]); cx.lineTo(Pp[j + 1][0], Pp[j + 1][1]); cx.stroke(); }
-        }
-        if (st.c > .9) { cx.fillStyle = 'rgba(244,246,250,' + al + ')'; cx.beginPath(); cx.arc(Pp[n - 1][0], Pp[n - 1][1], 2.2 * S * dk, 0, 7); cx.fill(); }
+        cx.strokeStyle = 'rgba(' + col + ',' + al + ')'; cx.lineWidth = p.sz * S * q0[2]; cx.beginPath(); cx.moveTo(X, Y); cx.lineTo(X + dx, Y + dy); cx.stroke();
       }
-      cx.globalAlpha = Math.min(1, .9 * energy); cx.drawImage(glowCv, 0, 0, W, H); cx.globalAlpha = 1;
       cx.globalCompositeOperation = 'source-over'; cx.lineCap = 'butt';
       var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .73 : H * .44, al3 = port ? 'center' : 'left';
       maskWord('El cerebro', tx, ty, px, u, .5, .018, WHITE, al3, -.035);
