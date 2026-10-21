@@ -68,39 +68,7 @@
   }
 
 
-  /* ---------- Cerebro de Jeeves: red de neuronas en 3D ---------- */
-  /* silueta de cerebro de perfil (x hacia el frente, y hacia arriba), en unidades -1..1 */
-  function brainPath(c, sc, ox, oy, rot) {
-    var k = Math.cos(rot), q = function (x, y) { return [ox + x * sc * k, oy - y * sc]; };
-    var P = [[.96, -.12], [1.0, .2, .82, .52, .55, .66], [.3, .8, -.1, .8, -.38, .72], [-.7, .62, -.95, .38, -.98, .1], [-1.0, -.12, -.92, -.3, -.8, -.38],
-      [-.9, -.5, -.72, -.68, -.48, -.64], [-.36, -.62, -.28, -.6, -.24, -.58], [-.22, -.75, -.2, -.88, -.17, -.97], [-.09, -.97], [-.08, -.84, -.06, -.64, -.02, -.52],
-      [.2, -.5, .5, -.5, .7, -.42], [.88, -.36, .96, -.24, .96, -.12]];
-    c.beginPath(); var p0 = q(P[0][0], P[0][1]); c.moveTo(p0[0], p0[1]);
-    for (var i = 1; i < P.length; i++) { var e = P[i]; if (e.length === 2) { var pp = q(e[0], e[1]); c.lineTo(pp[0], pp[1]); } else { var a1 = q(e[0], e[1]), a2 = q(e[2], e[3]), a3 = q(e[4], e[5]); c.bezierCurveTo(a1[0], a1[1], a2[0], a2[1], a3[0], a3[1]); } }
-    c.closePath();
-  }
-  var BRAIN_LINES = [ /* surcos: cisura lateral, surco central, cerebelo y algunas circunvoluciones */
-    [[.6, -.2], [.35, -.12, .1, -.02, -.25, .06]], [[.05, .79], [.02, .5, .08, .3, -.02, .06]], [[-.82, -.4], [-.65, -.34, -.45, -.4, -.3, -.5]],
-    [[.7, .35], [.55, .3, .45, .4, .32, .5]], [[-.45, .6], [-.4, .4, -.55, .3, -.62, .15]], [[.4, .1], [.3, .25, .2, .2, .15, .4]], [[-.2, .3], [-.3, .45, -.15, .55, -.25, .68]]];
-  var BRAIN = (function () {
-    var oc = document.createElement('canvas'), o = oc.getContext('2d'), pts = [], edges = [], i, j, n = 0, tries = 0;
-    oc.width = oc.height = 10; brainPath(o, 400, 0, 0, 0);
-    while (n < 240 && tries < 30000) {
-      tries++; var x = rnd(tries * 1.7) * 2.1 - 1.05, y = rnd(tries * 2.3 + 5) * 1.9 - 1.02;
-      if (!o.isPointInPath(x * 400, -y * 400)) continue;
-      var edge = 1 - Math.min(1, Math.hypot(x / 1.0, (y - .1) / .8)), z = (rnd(tries * 3.1 + 9) - .5) * .9 * (.45 + .55 * Math.sqrt(Math.max(0, edge + .3)));
-      var ok = true; for (i = 0; i < pts.length; i++) { var dx = pts[i].x - x, dy = pts[i].y - y; if (dx * dx + dy * dy < .009) { ok = false; break; } }
-      if (!ok) continue;
-      pts.push({ x: x, y: y, z: z, d: Math.min(1, Math.hypot(x - .1, y - .05) / 1.05), c: rnd(n * 7.7) }); n++;
-    }
-    for (i = 0; i < pts.length; i++) {
-      var near = [];
-      for (j = 0; j < pts.length; j++) if (j !== i) { var a = pts[i], b = pts[j]; near.push([Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2) * .5, j]); }
-      near.sort(function (p1, p2) { return p1[0] - p2[0]; });
-      for (j = 0; j < 3; j++) if (near[j][1] > i && near[j][0] < .06) edges.push([i, near[j][1]]);
-    }
-    return { pts: pts, edges: edges };
-  })();
+  /* ---------- Cerebro de Jeeves: holograma de asistente ---------- */
   var BP = 0; /* posición en beats (desde el drop) del cuadro actual */
   /* plantilla de beneficio: dibujo arriba (o a la derecha), título grande y una línea de apoyo */
   function benefit(u, back, ink, sub, title, line, motif) {
@@ -472,59 +440,68 @@
     } },
     { n: 'CEREBRO', d: 10.0, dark: true, hit: [], f: function (u) {
       bg(INK);
-      var port = H > W, sc = port ? Math.min(W * .4, H * .2) : Math.min(H * .34, W * .22), mx = port ? W / 2 : W * .64, my = port ? H * .34 : H * .47;
-      var rot = .32 * Math.sin(u * .55 - .4), cr = Math.cos(rot), sr = Math.sin(rot), P = BRAIN.pts, E = BRAIN.edges, i;
-      /* latido: en el último compás antes del drop late en cada golpe, cada vez más fuerte */
-      var last = BP >= -4 && BP < 0, fr = BP - Math.floor(BP), beatK = last ? (1 + (BP + 4) * .35) * Math.exp(-fr * 5) : 0;
-      var glow = .35 + .65 * eo(seg(u, 3, 6)) + beatK * .5;
-      var g = cx.createRadialGradient(mx, my, 0, mx, my, sc * 2.2); g.addColorStop(0, 'rgba(37,99,235,' + (.22 * glow) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-      var Q = P.map(function (p) { var X = p.x * cr - p.z * sr, Z = p.x * sr + p.z * cr, k = 3.2 / (3.2 + Z); return [mx + X * sc * k * (1 + beatK * .04), my - p.y * sc * k * (1 + beatK * .04), k, Z]; });
-      var appear = function (p) { return eo(seg(u, .2 + p.d * 2.4, .6 + p.d * 2.4)); };
-      cx.globalCompositeOperation = 'lighter';
-      /* contorno y surcos: se dibujan como trazo de luz */
-      var draw = eio(seg(u, .1, 2.6)), bs = sc * (1 + beatK * .04);
-      cx.save(); cx.setLineDash([2400 * S * draw, 99999]); cx.lineWidth = 2.2 * S; cx.shadowColor = MINT; cx.shadowBlur = 18 * S;
-      cx.strokeStyle = 'rgba(69,237,209,' + (.55 + .35 * glow) + ')'; brainPath(cx, bs, mx, my, rot); cx.stroke();
-      cx.lineWidth = 1.6 * S; cx.strokeStyle = 'rgba(69,237,209,' + (.3 + .25 * glow) + ')';
-      BRAIN_LINES.forEach(function (ln, k) {
-        var dk = eio(seg(u, 1 + k * .2, 2.4 + k * .2)); if (dk <= 0) return; var kx = Math.cos(rot);
-        var A = function (x, y) { return [mx + x * bs * kx, my - y * bs]; }, s0 = A(ln[0][0], ln[0][1]), c1 = A(ln[1][0], ln[1][1]), c2 = A(ln[1][2], ln[1][3]), e1 = A(ln[1][4], ln[1][5]);
-        cx.setLineDash([900 * S * dk, 99999]); cx.beginPath(); cx.moveTo(s0[0], s0[1]); cx.bezierCurveTo(c1[0], c1[1], c2[0], c2[1], e1[0], e1[1]); cx.stroke();
-      });
-      cx.restore();
-      cx.lineWidth = 1 * S;
-      for (i = 0; i < E.length; i++) {
-        var a = P[E[i][0]], b = P[E[i][1]], al = Math.min(appear(a), appear(b)) * eo(seg(u, 1 + Math.max(a.d, b.d) * 2.4, 1.6 + Math.max(a.d, b.d) * 2.4));
-        if (al <= 0) continue; var qa = Q[E[i][0]], qb = Q[E[i][1]];
-        cx.strokeStyle = 'rgba(69,237,209,' + (al * (.16 + .2 * glow) * (qa[2] + qb[2]) * .5) + ')'; cx.beginPath(); cx.moveTo(qa[0], qa[1]); cx.lineTo(qb[0], qb[1]); cx.stroke();
-        /* señales que viajan por las conexiones, cada vez más seguido */
-        if (i % 4 === 0 && u > 2.2) {
-          var sp = .6 + 1.4 * seg(u, 2.2, 9.5), ph = (u * sp + rnd(i)) % 1, on = rnd(i * 3 + Math.floor(u * sp + rnd(i))) < .25 + .55 * seg(u, 2.2, 9);
-          if (on) { var px2 = qa[0] + (qb[0] - qa[0]) * ph, py2 = qa[1] + (qb[1] - qa[1]) * ph; cx.fillStyle = 'rgba(244,246,250,' + (.85 * al) + ')'; cx.beginPath(); cx.arc(px2, py2, 1.8 * S, 0, 7); cx.fill(); }
-        }
-      }
-      for (i = 0; i < P.length; i++) {
-        var al2 = appear(P[i]); if (al2 <= 0) continue; var q = Q[i], tw = .6 + .4 * Math.sin(u * 3 + P[i].c * 20);
-        var col = P[i].c < .18 ? '77,139,255' : P[i].c < .8 ? '69,237,209' : '244,246,250', rr2 = (1.6 + 2.2 * q[2] * tw + beatK * 1.5) * S;
-        cx.fillStyle = 'rgba(' + col + ',' + (al2 * (.5 + .5 * glow) * q[2]) + ')'; cx.beginPath(); cx.arc(q[0], q[1], rr2, 0, 7); cx.fill();
-        if (P[i].c > .93) { cx.fillStyle = 'rgba(' + col + ',' + (al2 * .12 * glow) + ')'; cx.beginPath(); cx.arc(q[0], q[1], rr2 * 5, 0, 7); cx.fill(); }
+      var port = H > W, R = port ? Math.min(W * .36, H * .2) : Math.min(H * .38, W * .24), mx = port ? W / 2 : W * .64, my = port ? H * .33 : H * .5;
+      var last = BP >= -4 && BP < 0, fr = BP - Math.floor(BP), beatK = last ? (.6 + (BP + 4) * .3) * Math.exp(-fr * 5) : 0;
+      var spin = 1 + 2.5 * ei(seg(BP, -4, 0)), tt = u * spin, A = function (k) { return eio(seg(u, .2 + k * .35, .9 + k * .35)); };
+      var g = cx.createRadialGradient(mx, my, 0, mx, my, R * 2); g.addColorStop(0, 'rgba(37,99,235,' + (.26 + .2 * beatK) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+      cx.save(); cx.translate(mx, my); cx.scale(1 + beatK * .035, 1 + beatK * .035); cx.globalCompositeOperation = 'lighter'; cx.lineCap = 'butt';
+      function arc(r, a0, a1, w, col) { cx.strokeStyle = col; cx.lineWidth = w; cx.beginPath(); cx.arc(0, 0, r, a0, a1); cx.stroke(); }
+      var C = 'rgba(69,237,209,', B = 'rgba(77,139,255,', Wt = 'rgba(244,246,250,';
+      /* 1 · anillo exterior con marcas finas */
+      var k1 = A(0), r1 = R * 1.0;
+      if (k1 > 0) { arc(r1, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k1, 1.2 * S, C + '.55)');
+        for (var i = 0; i < 120 * k1; i++) { var an = i / 120 * Math.PI * 2 + tt * .05, l = i % 10 ? .025 : .06; cx.strokeStyle = i % 10 ? C + '.35)' : C + '.8)'; cx.lineWidth = (i % 10 ? 1 : 2) * S;
+          cx.beginPath(); cx.moveTo(Math.cos(an) * r1 * (1 - l), Math.sin(an) * r1 * (1 - l)); cx.lineTo(Math.cos(an) * r1, Math.sin(an) * r1); cx.stroke(); } }
+      /* 2 · arcos segmentados que giran al revés */
+      var k2 = A(1), r2 = R * .86;
+      if (k2 > 0) for (i = 0; i < 9; i++) { var a0 = i / 9 * Math.PI * 2 - tt * .35, len = (.25 + .35 * rnd(i * 5)) * k2; arc(r2, a0, a0 + len, (i % 3 ? 3 : 7) * S, i % 3 ? B + '.55)' : C + '.85)'); }
+      /* 3 · tres arcos gruesos y un radar que barre */
+      var k3 = A(2), r3 = R * .72;
+      if (k3 > 0) { for (i = 0; i < 3; i++) { var b0 = i / 3 * Math.PI * 2 + tt * .6; arc(r3, b0, b0 + Math.PI * .42 * k3, 12 * S, C + (.35 + .25 * beatK) + ')'); }
+        var sw = tt * 1.4; cx.fillStyle = C + '.10)'; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, r1 * .98, sw - .5, sw); cx.closePath(); cx.fill();
+        cx.strokeStyle = C + '.7)'; cx.lineWidth = 1.5 * S; cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(Math.cos(sw) * r1 * .98, Math.sin(sw) * r1 * .98); cx.stroke(); }
+      /* 4 · anillo de ondas de voz alrededor de los ojos */
+      var k4 = A(3), r4 = R * .44;
+      if (k4 > 0) for (i = 0; i < 72; i++) {
+        var an2 = i / 72 * Math.PI * 2, amp = (.35 + .65 * Math.abs(Math.sin(i * .9 + u * 5) * Math.sin(i * .37 - u * 3.1))) * (.6 + .4 * seg(u, 3, 8)) + beatK * .8;
+        var l2 = R * (.03 + .14 * amp) * k4; cx.strokeStyle = i % 2 ? C + '.75)' : B + '.75)'; cx.lineWidth = 2.2 * S;
+        cx.beginPath(); cx.moveTo(Math.cos(an2) * r4, Math.sin(an2) * r4); cx.lineTo(Math.cos(an2) * (r4 + l2), Math.sin(an2) * (r4 + l2)); cx.stroke();
       }
       cx.globalCompositeOperation = 'source-over';
+      /* núcleo: la cara de Jeeves */
+      var k5 = eo(seg(u, 1.2, 2.2)), rc = R * .36 * k5;
+      if (k5 > 0) {
+        cx.fillStyle = '#02040A'; cx.beginPath(); cx.arc(0, 0, rc, 0, 7); cx.fill(); cx.strokeStyle = C + '.6)'; cx.lineWidth = 2 * S; cx.stroke();
+        var blink = (u % 3.1 > 2.95) ? .1 : 1, ew = rc * .32, eh = rc * .62 * blink * (1 + beatK * .15);
+        cx.shadowColor = BLUE; cx.shadowBlur = 26 * S; cx.fillStyle = BLUE;
+        [-1, 1].forEach(function (sd) { rr(sd * rc * .3 - ew / 2, -eh / 2, ew, eh, ew / 2); cx.fill(); }); cx.shadowBlur = 0;
+      }
+      cx.restore();
+      /* datos alrededor del holograma */
+      var D = [['RUTA', 'LISTA', -.75], ['OBSTÁCULOS', '0', .75], ['DESTINO', 'MESA 5', 2.35], ['ESTADO', 'EN CAMINO', -2.35]];
+      D.forEach(function (d, k) {
+        var a = eo(seg(u, 3 + k * .45, 3.4 + k * .45)); if (a <= 0) return;
+        var an = d[2], ex = mx + Math.cos(an) * R * 1.08, ey = my + Math.sin(an) * R * 1.08, right = Math.cos(an) > 0, lx2 = ex + (right ? 1 : -1) * R * .22;
+        cx.strokeStyle = 'rgba(69,237,209,' + a * .7 + ')'; cx.lineWidth = 1.2 * S; cx.beginPath(); cx.moveTo(mx + Math.cos(an) * R * 1.0, my + Math.sin(an) * R * 1.0); cx.lineTo(ex, ey); cx.lineTo(lx2, ey); cx.stroke();
+        cx.textAlign = right ? 'left' : 'right'; var tx2 = lx2 + (right ? 6 : -6) * S;
+        font('600', 11 * S, FT); cx.fillStyle = 'rgba(163,173,191,' + a + ')'; cx.fillText(d[0], tx2, ey - 6 * S);
+        font('700', 18 * S, FT); cx.fillStyle = 'rgba(244,246,250,' + a + ')'; var sh = d[1].slice(0, Math.ceil(d[1].length * seg(u, 3.1 + k * .45, 3.6 + k * .45))); cx.fillText(sh, tx2, ey + 17 * S);
+        cx.textAlign = 'left';
+      });
       /* título y lo que hace */
       var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .64 : H * .3, al = port ? 'center' : 'left';
-      maskWord('El cerebro', tx, ty, px, u, 3.2, .02, WHITE, al, -.035);
-      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, 3.45, .02, MINT, al, -.035);
+      maskWord('El cerebro', tx, ty, px, u, 4.6, .02, WHITE, al, -.035);
+      maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, 4.85, .02, MINT, al, -.035);
       var L = ['Piensa la mejor ruta', 'Detecta personas y objetos', 'Te avisa cuando entrega'], fz = Math.min(W * (port ? .045 : .022), 24 * S);
       font('600', fz, FT); cx.textAlign = 'left';
       var lw = 0; L.forEach(function (l) { lw = Math.max(lw, cx.measureText(l).width); });
       var lx = port ? W / 2 - (lw + 28 * S) / 2 : 60 * S, ly = ty + px * 1.06 + (port ? 64 : 70) * S;
       L.forEach(function (l, k) {
-        var a = eo(seg(u, 5 + k * .9, 5.5 + k * .9)); if (a <= 0) return;
+        var a = eo(seg(u, 6 + k * .8, 6.5 + k * .8)); if (a <= 0) return;
         var y = ly + k * fz * 1.9;
         cx.fillStyle = 'rgba(69,237,209,' + a + ')'; cx.beginPath(); cx.arc(lx + 6 * S, y - fz * .32, 5 * S, 0, 7); cx.fill();
         cx.fillStyle = 'rgba(244,246,250,' + a + ')'; cx.fillText(l, lx + 28 * S + 14 * S * (1 - a), y);
       });
-      /* destello final que entrega al drop */
       if (BP > -.35 && BP < 0) { cx.fillStyle = 'rgba(244,246,250,' + ei(seg(BP, -.35, 0)) + ')'; cx.fillRect(0, 0, W, H); }
     } },
     { n: 'RÁFAGA', d: 2.0, dark: true, hit: [0, .5, 1, 1.5], f: function (u) { rafaga(u, ['AHORRA', 'TIEMPO.', 'AHORRA', 'DINERO.']); } },
