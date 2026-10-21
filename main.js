@@ -154,29 +154,141 @@
     }).observe(cv);
   })();
 
-  /* ---------- Capas: la foto real se separa pieza por pieza ---------- */
-  (function layers() {
-    var sec = $('#capas'); if (!sec || reduce) return;
-    var stack = $('.lay-stack', sec), imgs = $$('img', stack), items = $$('.lay-list li', sec), list = $('.lay-list', sec), cur = -1, vis = false, raf = 0, last = '';
-    function clamp(v) { return Math.max(0, Math.min(1, v)); }
-    function ease(t) { return t * t * (3 - 2 * t); }
-    function prog() { var r = sec.getBoundingClientRect(); return clamp(-r.top / Math.max(1, r.height - window.innerHeight)); }
-    function draw(p) {
-      var e = ease(clamp((p - .04) / .3)), on = p < .36 ? -1 : Math.min(3, Math.floor((p - .36) / .16));
-      stack.style.setProperty('--e', e.toFixed(3));
-      var key = on + '';
-      if (key !== last) {
-        last = key; stack.classList.toggle('focus', on >= 0);
-        imgs.forEach(function (im, i) { im.classList.toggle('on', i === on); });
-        items.forEach(function (li, i) { li.classList.toggle('on', i === on); });
-        if (list) list.classList.toggle('has', on >= 0);
-      }
+  /* ---------- Capas: escena de cine con la foto real ----------
+     El scroll mueve una "cámara": Jeeves se enciende, se abre en 3D,
+     la cámara se acerca a cada pieza mientras un campo de color barre
+     la pantalla, y al final se vuelve a armar. Los ojos siguen el dedo. */
+  (function capas() {
+    var sec = $('#capas'); if (!sec) return;
+    var stack = $('.cap-stack', sec), layers = $$('.cap-layer', sec), imgs = layers.map(function (l) { return $('img', l); });
+    var floor = $('.cap-floor', sec), screen = $('.cap-screen', sec);
+    var fields = $$('.cap-field', sec), words = fields.map(function (f) { return $('.cap-word', f); }), copies = fields.map(function (f) { return $('.cap-copy', f); });
+    /* blink & mirada (también sin escena) */
+    var look = { x: 0, y: 0, tx: 0, ty: 0, t: 0 }, raf = 0, vis = false, cur = -1, theme = '';
+    function blink() {
+      if (!screen) return;
+      screen.classList.add('blink'); setTimeout(function () { screen.classList.remove('blink'); }, 150);
     }
-    function loop() { var t = prog(); cur = cur < 0 ? t : cur + (t - cur) * .14; draw(cur); raf = vis && Math.abs(t - cur) > 1e-3 ? requestAnimationFrame(loop) : 0; }
-    window.addEventListener('scroll', function () { if (vis && !raf) raf = requestAnimationFrame(loop); }, { passive: true });
-    window.addEventListener('resize', function () { cur = prog(); draw(cur); });
-    cur = prog(); draw(cur);
-    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { vis = e[0].isIntersecting; if (vis && !raf) raf = requestAnimationFrame(loop); }).observe(sec);
+    (function loopBlink() { setTimeout(function () { if (vis || reduce) blink(); loopBlink(); }, 2400 + Math.random() * 2600); })();
+    if (reduce) return;
+    sec.classList.add('live');
+    /* el texto va en una capa encima del robot; el fondo de color queda debajo */
+    var over = document.createElement('div'); over.className = 'cap-copies';
+    copies.forEach(function (c, i) { c.setAttribute('data-c', fields[i].getAttribute('data-c')); over.appendChild(c); });
+    $('.cap-pin', sec).appendChild(over);
+
+    /* geometría de la foto: inicio y alto de cada capa (fracción del alto armado) */
+    var T = [0, .2616, .439, .686], HH = [.2616, .1773, .247, .314], D = [-.22, -.075, .075, .22], Z = [90, 30, -30, -90];
+    var C = T.map(function (t, i) { return t + HH[i] / 2; });
+    var B = [.2, .365, .53, .695, .86]; /* inicio de cada capítulo */
+    var THEME = ['dark', 'dark', 'light', 'light', 'dark', 'dark'];
+    var g = {};
+    function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+    function sat(v) { return clamp(v, 0, 1); }
+    function eio(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }   /* ease-in-out para lo que se mueve en pantalla */
+    function eo(t) { return 1 - Math.pow(1 - t, 3); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function size() {
+      var vw = window.innerWidth, vh = window.innerHeight, m = vw < 760;
+      g.m = m; g.vw = vw; g.vh = vh;
+      g.H = m ? Math.min(vh * .56, vw * 1.12) : Math.min(vh * .8, 900);
+      g.W = g.H * 1280 / 1720;
+      g.ax = m ? vw * .5 : vw * .64; g.ay = m ? vh * .42 : vh * .54;
+      g.sEx = Math.min(1, (m ? vh * .6 : vh * .74) / (g.H * 1.44));
+      g.sF = m ? 1.3 : 1.5; g.yF = m ? vh * .4 : vh * .5;
+      g.zk = g.H / 700;
+      stack.style.width = g.W + 'px'; stack.style.height = g.H + 'px';
+      layers.forEach(function (l, i) { l.style.top = (T[i] * 100) + '%'; l.style.height = (HH[i] * 100) + '%'; });
+    }
+    function prog() { var r = sec.getBoundingClientRect(); return sat(-r.top / Math.max(1, r.height - window.innerHeight)); }
+    function draw(p) {
+      /* 1) encendido */
+      var on = eo(sat(p / .07));
+      /* 2) apertura escalonada (la cabeza sale primero) y 5) re-armado (la base asienta primero) */
+      var e = [], eAvg = 0;
+      for (var i = 0; i < 4; i++) {
+        var open = eio(sat((p - .07 - i * .014) / .1));
+        var close = eio(sat((p - .865 - (3 - i) * .012) / .07));
+        e[i] = open * (1 - close); eAvg += e[i] / 4;
+      }
+      /* 3) enfoque: q = pieza activa (continua), F = cuánto se acerca la cámara */
+      var q = 0;
+      for (var k = 1; k < 4; k++) q += eio(sat((p - B[k] + .03) / .06));
+      var F = eio(sat((p - B[0] + .03) / .06)) * (1 - eio(sat((p - B[4] + .005) / .05)));
+      var S = lerp(lerp(1.1, 1, on), g.sEx, eAvg); S = lerp(S, g.sF, F);
+      var qi = Math.floor(q), qf = q - qi, qn = Math.min(3, qi + 1);
+      var yA = (C[qi] + D[qi] * e[qi]) * g.H, yB = (C[qn] + D[qn] * e[qn]) * g.H, yq = lerp(yA, yB, qf);
+      var camY = F * (g.yF - g.ay - (yq - g.H / 2) * S);
+      var camX = g.m ? 0 : F * -g.vw * .02;
+      var rotY = -15 * eAvg * (1 - .55 * F) + look.x * 4 * (1 - F * .5), rotX = 5 * eAvg - look.y * 2;
+      stack.style.transform = 'translate3d(' + (g.ax - g.W / 2 + camX).toFixed(1) + 'px,' + (g.ay - g.H / 2 + camY).toFixed(1) + 'px,0) scale(' + S.toFixed(4) + ') rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg)';
+      for (i = 0; i < 4; i++) {
+        var w = Math.max(0, 1 - Math.abs(q - i)), push = F * .07 * clamp(i - q, -1, 1) * (1 - w);
+        var dy = (D[i] * e[i] + push) * g.H, z = Z[i] * e[i] * g.zk;
+        layers[i].style.transform = 'translate3d(0,' + dy.toFixed(1) + 'px,' + z.toFixed(1) + 'px)';
+        layers[i].style.opacity = (1 - F * (1 - w) * (g.m ? .84 : .72)).toFixed(3);
+        var bl = F * (1 - w) * 3, br = lerp(.14, 1, on);
+        imgs[i].style.filter = (br < .999 ? 'brightness(' + br.toFixed(3) + ') ' : '') + (bl > .05 ? 'blur(' + bl.toFixed(2) + 'px)' : '') || 'none';
+      }
+      if (screen) screen.style.opacity = lerp(.25, 1, on).toFixed(3);
+      /* sombra de piso: solo cuando está armado */
+      var fy = g.ay + (g.H / 2) * S + 6, fw = g.W * S * .9;
+      floor.style.transform = 'translate3d(' + (g.ax - fw / 2).toFixed(1) + 'px,' + fy.toFixed(1) + 'px,0) scale(' + (fw / 10).toFixed(2) + ',' + (fw * .06 / 10).toFixed(2) + ')';
+      floor.style.opacity = ((1 - eAvg) * (1 - F) * on * (theme === 'light' ? .35 : .8)).toFixed(3);
+      /* 4) campos de color: barren de abajo hacia arriba en cada capítulo */
+      var wipe = [1];
+      for (k = 1; k <= 4; k++) wipe[k] = eio(sat((p - B[k - 1] + .025) / .05));
+      wipe[5] = eio(sat((p - .925) / .045));
+      var top = 0;
+      for (k = 0; k < fields.length; k++) {
+        if (k && k < 5) fields[k].style.clipPath = 'inset(' + ((1 - wipe[k]) * 100).toFixed(2) + '% 0 0 0)';
+        if (wipe[k] > .5) top = k;
+        var local = k === 0 ? sat(p / B[0]) : sat((p - B[k - 1]) / .165);
+        if (words[k]) words[k].style.transform = 'translate3d(calc(-50% + ' + lerp(7, -7, local).toFixed(2) + 'vw),-50%,0)';
+        /* texto: entra subiendo cuando su color ya cubrió la pantalla y se va cuando llega el siguiente */
+        var inn = k === 0 ? 1 : eo(sat((wipe[k] - .55) / .45)), out = k < 5 ? eio(sat((wipe[k + 1] || 0) / .5)) : 0;
+        if (k === 0) out = eio(sat((p - .07) / .08));
+        copies[k].style.opacity = (inn * (1 - out)).toFixed(3);
+        copies[k].style.visibility = inn * (1 - out) < .01 ? 'hidden' : 'visible';
+        var ty = (1 - inn) * 28 - out * 28;
+        copies[k].style.transform = (k === 0 && !g.m ? 'translateY(-50%) ' : '') + 'translate3d(0,' + ty.toFixed(1) + 'px,0)';
+      }
+      if (screen) screen.classList.toggle('happy', p > .95);
+      var th = THEME[top];
+      if (th !== theme) { theme = th; sec.setAttribute('data-theme', th); if (typeof onScroll === 'function') requestAnimationFrame(onScroll); }
+    }
+    function loop() {
+      var t = prog(); cur = cur < 0 ? t : cur + (t - cur) * .11;
+      look.x += (look.tx - look.x) * .08; look.y += (look.ty - look.y) * .08;
+      if (screen) { screen.style.setProperty('--ex', (look.x * 12).toFixed(2) + '%'); screen.style.setProperty('--ey', (look.y * 9).toFixed(2) + '%'); }
+      draw(cur);
+      var moving = Math.abs(t - cur) > 2e-4 || Math.abs(look.tx - look.x) > .002 || Math.abs(look.ty - look.y) > .002;
+      raf = vis && moving ? requestAnimationFrame(loop) : 0;
+    }
+    function kick() { if (vis && !raf) raf = requestAnimationFrame(loop); }
+    /* mirada: sigue el cursor o el dedo; sin puntero, mira hacia el texto */
+    var idle = 0;
+    function point(x, y) {
+      var r = screen ? screen.getBoundingClientRect() : stack.getBoundingClientRect();
+      look.tx = clamp((x - (r.left + r.width / 2)) / (g.vw * .35), -1, 1);
+      look.ty = clamp((y - (r.top + r.height / 2)) / (g.vh * .35), -1, 1);
+      clearTimeout(idle); idle = setTimeout(function () { look.tx = g.m ? 0 : -.6; look.ty = .1; kick(); }, 2500);
+      kick();
+    }
+    window.addEventListener('pointermove', function (ev) { if (vis) point(ev.clientX, ev.clientY); }, { passive: true });
+    window.addEventListener('pointerdown', function (ev) { if (vis) point(ev.clientX, ev.clientY); }, { passive: true });
+    stack.addEventListener('click', blink);
+    window.addEventListener('scroll', kick, { passive: true });
+    window.addEventListener('resize', function () { size(); cur = prog(); draw(cur); });
+    size(); look.tx = g.m ? 0 : -.6; cur = prog(); draw(cur);
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { vis = en[0].isIntersecting; kick(); }, { rootMargin: '100px 0px' }).observe(sec);
+    else { vis = true; kick(); }
+    /* solo para grabar el video cuadro por cuadro */
+    if (window.JEEVES_EXPORT) window.JeevesCapas = { seek: function (p, lx, ly) {
+      var top = sec.getBoundingClientRect().top + window.scrollY; window.scrollTo(0, top + p * (sec.offsetHeight - window.innerHeight));
+      look.x = look.tx = lx || 0; look.y = look.ty = ly || 0; cur = p; draw(p);
+      if (screen) { screen.style.setProperty('--ex', (look.x * 12).toFixed(2) + '%'); screen.style.setProperty('--ey', (look.y * 9).toFixed(2) + '%'); }
+    }, blink: function (b) { if (screen) screen.classList.toggle('blink', !!b); } };
   })();
 
   /* ---------- Anatomía: el modelo original se arma con el scroll ---------- */
