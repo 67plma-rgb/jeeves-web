@@ -657,7 +657,7 @@
       if (abuf) startSrc();
       else if (!loading) {
         loading = true; setLabel();
-        fetch(BASE + 'assets/reel-musica.mp3').then(function (r) { return r.arrayBuffer(); }).then(function (data) {
+        fetch(BASE + 'assets/reel-musica.mp3?v=5').then(function (r) { return r.arrayBuffer(); }).then(function (data) {
           ac.decodeAudioData(data, function (b) { abuf = b; loading = false; setLabel(); if (soundOn) startSrc(); }, function () { loading = false; soundOn = false; setLabel(); });
         }).catch(function () { loading = false; soundOn = false; setLabel(); });
       }
