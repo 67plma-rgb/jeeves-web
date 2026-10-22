@@ -46,6 +46,10 @@
     var r = Math.pow(rnd(i + 1), 1.4), th = rnd(i * 2.3 + 5) * 6.2832, ph = Math.acos(2 * rnd(i * 3.7 + 9) - 1);
     P.push({ r: r, th: th, ph: ph, w: (.25 + .9 * (1 - r)) * (rnd(i * 5.1) < .5 ? 1 : -.6), c: rnd(i * 7.9), s: .7 + rnd(i * 4.1) * 1.3, o: rnd(i * 6.3) * 6.28 });
   }
+  var SPR = ['120,170,255', '80,235,215', '235,250,255'].map(function (c) {
+    var o = doc.createElement('canvas'); o.width = o.height = 32; var q = o.getContext('2d'), g = q.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(' + c + ',1)'); g.addColorStop(.35, 'rgba(' + c + ',.55)'); g.addColorStop(1, 'rgba(' + c + ',0)'); q.fillStyle = g; q.fillRect(0, 0, 32, 32); return o;
+  });
   function fit() {
     DPR = Math.min(2, window.devicePixelRatio || 1);
     var b = cv.getBoundingClientRect(); W = Math.max(1, b.width); H = Math.max(1, b.height);
@@ -62,15 +66,21 @@
     var g = cx.createRadialGradient(mx, my, 0, mx, my, R * 1.6); g.addColorStop(0, 'rgba(37,99,235,' + (.22 * energia + .08) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)');
     cx.fillStyle = g; cx.fillRect(0, 0, W, H);
     cx.globalCompositeOperation = 'lighter';
-    var cols = ['rgba(120,170,255,', 'rgba(80,235,215,', 'rgba(235,250,255,'];
     for (var i = 0; i < P.length; i++) {
       var p = P[i], tt = reduce ? 0 : t, ang = p.th + p.w * tt * (.4 + energia), rr = p.r * (1 + .07 * Math.sin(tt * (1 + p.s) + p.o) + nivel * .18 * (1 - p.r));
       var sp = Math.sin(p.ph), x = rr * sp * Math.cos(ang), z = rr * sp * Math.sin(ang), y = rr * Math.cos(p.ph);
       var k = 3 / (3 + z), a = (.25 + .75 * (1 - p.r)) * (.45 + .55 * k) * (.55 + .6 * energia);
-      cx.fillStyle = cols[p.c < .55 ? 0 : p.c < .9 ? 1 : 2] + Math.min(1, a) + ')';
-      var s = p.s * k * (1 + nivel * .3); cx.fillRect(mx + x * R * k - s / 2, my - y * R * k * .92 - s / 2, s, s);
+      var sI = p.c < .55 ? 0 : p.c < .9 ? 1 : 2, s = p.s * 2.6 * k * (1 + nivel * .3); cx.globalAlpha = Math.min(1, a);
+      cx.drawImage(SPR[sI], mx + x * R * k - s / 2, my - y * R * k * .92 - s / 2, s, s);
     }
-    cx.globalCompositeOperation = 'source-over';
+    cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+    /* esfera de cristal: borde, brillo y reflejos */
+    var OR = R * 1.18, og = cx.createRadialGradient(mx, my, OR * .72, mx, my, OR); og.addColorStop(0, 'rgba(160,200,255,0)'); og.addColorStop(.86, 'rgba(160,200,255,.07)'); og.addColorStop(1, 'rgba(200,225,255,.30)');
+    cx.fillStyle = og; cx.beginPath(); cx.arc(mx, my, OR, 0, 7); cx.fill();
+    cx.lineWidth = 1.2; cx.strokeStyle = 'rgba(210,230,255,.45)'; cx.beginPath(); cx.arc(mx, my, OR, 0, 7); cx.stroke();
+    var hg = cx.createLinearGradient(mx - OR * .8, my - OR * .9, mx - OR * .1, my - OR * .2); hg.addColorStop(0, 'rgba(255,255,255,.55)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.strokeStyle = hg; cx.lineWidth = 3; cx.lineCap = 'round'; cx.beginPath(); cx.arc(mx, my, OR * .88, Math.PI * 1.08, Math.PI * 1.42); cx.stroke();
+    cx.strokeStyle = 'rgba(120,230,255,.28)'; cx.lineWidth = 2; cx.beginPath(); cx.arc(mx, my, OR * .9, Math.PI * .12, Math.PI * .3); cx.stroke();
     raf = reduce ? 0 : requestAnimationFrame(draw);
   }
   function startDraw() { fit(); cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }
@@ -86,21 +96,22 @@
   if (!SR) { talk.textContent = 'Voz no disponible en este navegador'; talk.disabled = true; talk.style.opacity = .6; }
 
   function setStatus(t, e) { status.textContent = t; estado = e || 'idle'; }
+  var FEM = ['dalia', 'sabina', 'paulina', 'helena', 'laura', 'monica', 'lucia', 'elena', 'maria', 'marisol', 'camila', 'catalina', 'female', 'mujer', 'google espanol', 'google español', 'samantha'];
+  var MAS = ['raul', 'jorge', 'diego', 'juan', 'pablo', 'carlos', 'miguel', 'male', 'hombre', 'alvaro'];
   function pickVoice() {
     if (!voz.ok) return;
-    var vs = speechSynthesis.getVoices() || [], es = vs.filter(function (v) { return /^es/i.test(v.lang); });
-    var pref = ['raul', 'jorge', 'diego', 'juan', 'pablo', 'carlos', 'miguel', 'male', 'hombre'];
-    var mx = es.filter(function (v) { return /MX|419|US/i.test(v.lang); });
-    var pool = mx.length ? mx.concat(es) : es, hit = null;
-    for (var i = 0; i < pref.length && !hit; i++) hit = pool.filter(function (v) { return v.name.toLowerCase().indexOf(pref[i]) > -1; })[0];
-    voz.v = hit || pool[0] || null;
+    var vs = speechSynthesis.getVoices() || [], es = vs.filter(function (v) { return /^es/i.test(v.lang); }), hit = null, nm = function (v) { return norm(v.name); };
+    var mx = es.filter(function (v) { return /MX|419|US/i.test(v.lang); }), pool = mx.concat(es);
+    for (var i = 0; i < FEM.length && !hit; i++) hit = pool.filter(function (v) { return nm(v).indexOf(norm(FEM[i])) > -1; })[0];
+    if (!hit) hit = pool.filter(function (v) { return !MAS.some(function (m) { return nm(v).indexOf(m) > -1; }); })[0];
+    voz.v = hit || pool[0] || null; voz.sinFem = !hit;
   }
   if (voz.ok) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
   function hablar(texto, fin) {
     if (!voz.ok || voz.mudo || !isOpen) { if (fin) fin(); return; }
     speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(texto.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim());
-    u.lang = (voz.v && voz.v.lang) || 'es-MX'; if (voz.v) u.voice = voz.v; u.rate = 1.02; u.pitch = .82;
+    u.lang = (voz.v && voz.v.lang) || 'es-MX'; if (voz.v) u.voice = voz.v; u.rate = .95; u.pitch = voz.sinFem ? 1.35 : 1.12; u.volume = .92;
     u.onstart = function () { setStatus('Hablando…', 'speak'); };
     var done = function () { setStatus(voz.escucha ? 'Te escucho…' : 'Listo para atenderte', voz.escucha ? 'listen' : 'idle'); if (fin) fin(); };
     u.onend = done; u.onerror = done; speechSynthesis.speak(u);

@@ -52,6 +52,7 @@
     }
     cx.globalAlpha = 1; return w;
   }
+  var RB = {};
   var textReady = 0, dotX = 0;
   function buildText() {
     var oc = document.createElement('canvas'), w = 900, h = 260; oc.width = w; oc.height = h;
@@ -304,18 +305,52 @@
       }
     } },
     { n: 'FOTO', d: 4.0, dark: true, f: function (u) {
-      bg(INK);
-      var port = H > W, h = Math.min(H * (port ? .58 : .64), W * (port ? 1.0 : .5)), oy = H * (port ? .45 : .44), on = eo(seg(u, .2, 1.6));
-      var g = cx.createRadialGradient(W / 2, oy - h * .1, 0, W / 2, oy, h * .95); g.addColorStop(0, 'rgba(37,99,235,' + (.34 * on) + ')'); g.addColorStop(1, 'rgba(37,99,235,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-      cx.save(); cx.translate(W / 2, oy + h / 2); cx.scale(1, .16); cx.fillStyle = 'rgba(69,237,209,' + (.16 * on) + ')'; cx.beginPath(); cx.arc(0, 0, h * .42, 0, 7); cx.fill(); cx.restore();
-      /* se enciende de arriba hacia abajo, siguiendo una línea de luz */
-      var hh = h * (1 + .05 * eio(seg(u, 0, 4))), top = oy - hh / 2, sy = top - 10 * S + (hh + 20 * S) * eio(seg(u, .2, 1.6));
-      cx.save(); cx.beginPath(); cx.rect(0, 0, W, sy); cx.clip(); robot(W / 2, oy, hh, 0, 1); cx.restore();
-      cx.save(); cx.beginPath(); cx.rect(0, sy, W, H); cx.clip(); robot(W / 2, oy, hh, 0, .1); cx.restore();
-      if (u < 1.7) { cx.fillStyle = 'rgba(69,237,209,' + (1 - seg(u, 1.4, 1.7)) + ')'; cx.shadowColor = MINT; cx.shadowBlur = 24 * S; cx.fillRect(W / 2 - hh * .5, sy, hh, 2 * S); cx.shadowBlur = 0; }
-      var k = eo(seg(u, 1.6, 2.2)), px = Math.min(W * (port ? .085 : .05), 44 * S);
-      font('600', 11 * S, FT); cx.textAlign = 'center'; cx.fillStyle = 'rgba(69,237,209,' + k + ')'; cx.fillText('ASÍ SE VE DE VERDAD', W / 2, H - 58 * S - px * 1.2);
-      font('700', px); cx.fillStyle = 'rgba(244,246,250,' + k + ')'; cx.fillText('Conoce a Jeeves.', W / 2, H - 58 * S + 14 * S * (1 - k)); cx.textAlign = 'left';
+      /* Revelado de producto: estudio oscuro, haz de luz cenital, cámara que avanza, brillo que recorre el robot y reflejo en el piso. */
+      bg('#04060B');
+      var port = H > W, k0 = eo(seg(u, 0, 1.2)), dolly = 1 + .07 * eio(seg(u, 0, 4)), h = Math.min(H * (port ? .56 : .66), W * (port ? .98 : .5)) * dolly;
+      var cxm = W / 2, oy = H * (port ? .43 : .44) - h * .02 * eio(seg(u, 0, 4)), floorY = oy + h / 2;
+      /* piso: degradado y charco de luz */
+      var fg = cx.createLinearGradient(0, floorY - h * .06, 0, H); fg.addColorStop(0, 'rgba(24,36,64,' + .55 * k0 + ')'); fg.addColorStop(1, 'rgba(4,6,11,0)'); cx.fillStyle = fg; cx.fillRect(0, floorY - h * .06, W, H - floorY + h * .06);
+      cx.save(); cx.translate(cxm, floorY); cx.scale(1, .15); var pg = cx.createRadialGradient(0, 0, 0, 0, 0, h * .62); pg.addColorStop(0, 'rgba(190,215,255,' + .34 * k0 + ')'); pg.addColorStop(.5, 'rgba(77,139,255,' + .12 * k0 + ')'); pg.addColorStop(1, 'rgba(77,139,255,0)'); cx.fillStyle = pg; cx.beginPath(); cx.arc(0, 0, h * .62, 0, 7); cx.fill(); cx.restore();
+      /* haz cenital (capas suaves) */
+      cx.globalCompositeOperation = 'lighter';
+      for (var L = 0; L < 12; L++) {
+        var wTop = h * (.08 + L * .02), wBot = h * (.4 + L * .07), gr = cx.createLinearGradient(0, 0, 0, floorY);
+        gr.addColorStop(0, 'rgba(170,200,255,' + (.04 * k0 * (1 - L * .07)) + ')'); gr.addColorStop(1, 'rgba(120,160,255,0)');
+        cx.fillStyle = gr; cx.beginPath(); cx.moveTo(cxm - wTop, 0); cx.lineTo(cxm + wTop, 0); cx.lineTo(cxm + wBot, floorY); cx.lineTo(cxm - wBot, floorY); cx.closePath(); cx.fill();
+      }
+      /* polvo en el haz */
+      for (var d = 0; d < 46; d++) {
+        var dx = (rnd(d * 3.1) - .5) * h * .9, dy = (((rnd(d * 7.7) + u * (.012 + rnd(d) * .02)) % 1)) * floorY, inb = 1 - Math.abs(dx) / (h * (.2 + dy / floorY * .45));
+        if (inb <= 0) continue; cx.fillStyle = 'rgba(210,230,255,' + (inb * .5 * k0) + ')'; cx.beginPath(); cx.arc(cxm + dx, dy, (.6 + rnd(d * 5.3) * 1.2) * S, 0, 7); cx.fill();
+      }
+      cx.globalCompositeOperation = 'source-over';
+      /* robot en un lienzo aparte para poder iluminarlo */
+      var rw = Math.round(h * 1280 / 1720), rh = Math.round(h);
+      if (!RB.c) { RB.c = document.createElement('canvas'); RB.x = RB.c.getContext('2d'); RB.r = document.createElement('canvas'); RB.rx = RB.r.getContext('2d'); }
+      if (RB.c.width !== rw || RB.c.height !== rh) { RB.c.width = RB.r.width = rw; RB.c.height = RB.r.height = rh; }
+      var o = RB.x; o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, rw, rh);
+      for (var i = 0; i < 4; i++) { var im = CAPA[i]; if (!im.complete || !im.naturalWidth) continue; o.drawImage(im, 0, CT[i] * rh, rw, CHH[i] * rh); }
+      var expo = eo(seg(u, .35, 1.7));
+      o.globalCompositeOperation = 'source-atop';
+      /* luz de estudio: arriba más clara, abajo cae a sombra */
+      var lg = o.createLinearGradient(0, 0, 0, rh); lg.addColorStop(0, 'rgba(0,0,0,0)'); lg.addColorStop(.7, 'rgba(0,4,16,.18)'); lg.addColorStop(1, 'rgba(0,4,16,.55)'); o.fillStyle = lg; o.fillRect(0, 0, rw, rh);
+      /* brillo que recorre el cuerpo */
+      var sp = -.4 + 1.8 * eio(seg(u, 1.0, 2.7)), sg = o.createLinearGradient(rw * (sp - .22), 0, rw * (sp + .22), rh * .5); sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(.5, 'rgba(235,248,255,' + .5 * (1 - seg(u, 2.4, 2.9)) + ')'); sg.addColorStop(1, 'rgba(255,255,255,0)'); o.fillStyle = sg; o.fillRect(0, 0, rw, rh);
+      /* luz de contorno turquesa por el costado derecho */
+      var rg = o.createLinearGradient(rw * .62, 0, rw, 0); rg.addColorStop(0, 'rgba(69,237,209,0)'); rg.addColorStop(1, 'rgba(69,237,209,' + .38 * expo + ')'); o.fillStyle = rg; o.fillRect(0, 0, rw, rh);
+      /* exposición: sale de la oscuridad */
+      o.fillStyle = 'rgba(4,6,11,' + (1 - expo) * .92 + ')'; o.fillRect(0, 0, rw, rh); o.globalCompositeOperation = 'source-over';
+      /* reflejo: espejo vertical que se desvanece */
+      var q = RB.rx; q.setTransform(1, 0, 0, 1, 0, 0); q.clearRect(0, 0, rw, rh); q.save(); q.translate(0, rh); q.scale(1, -1); q.drawImage(RB.c, 0, 0); q.restore();
+      q.globalCompositeOperation = 'destination-out'; var fg2 = q.createLinearGradient(0, 0, 0, rh * .42); fg2.addColorStop(0, 'rgba(0,0,0,.62)'); fg2.addColorStop(1, 'rgba(0,0,0,1)'); q.fillStyle = fg2; q.fillRect(0, 0, rw, rh); q.globalCompositeOperation = 'source-over';
+      cx.drawImage(RB.r, 0, 0, rw, rh * .45, cxm - rw / 2, floorY - rh * .015, rw, rh * .45);
+      cx.drawImage(RB.c, cxm - rw / 2, oy - rh / 2, rw, rh);
+      /* titular */
+      var px = Math.min(W * (port ? .1 : .055), 50 * S), ty = H - 64 * S;
+      maskWord('Conoce a', cxm - (W * .0), ty - px * 1.05, px, u, 2.0, .02, WHITE, 'center', -.035);
+      maskWord('Jeeves.', cxm, ty, px, u, 2.25, .03, MINT, 'center', -.035);
+      var vg = cx.createRadialGradient(W / 2, H * .45, Math.min(W, H) * .35, W / 2, H * .5, Math.max(W, H) * .8); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)'); cx.fillStyle = vg; cx.fillRect(0, 0, W, H);
     } },
     { n: 'FRASE', d: 2.0, dark: true, hit: [0, 1], f: function (u) {
       bg(INK);
@@ -474,7 +509,7 @@
       var px = Math.min(W * (port ? .085 : .05), 50 * S), tx = port ? W / 2 : 60 * S, ty = port ? H * .73 : H * .44, al3 = port ? 'center' : 'left';
       maskWord('El cerebro', tx, ty, px, u, .5, .018, WHITE, al3, -.035);
       maskWord('de Jeeves.', tx, ty + px * 1.06, px, u, .7, .018, MINT, al3, -.035);
-      if (BP > -.35 && BP < 0) { cx.fillStyle = 'rgba(244,246,250,' + ei(seg(BP, -.35, 0)) + ')'; cx.fillRect(0, 0, W, H); }
+      if (BP > -.35 && BP < 0) { cx.fillStyle = 'rgba(244,246,250,' + .6 * eio(seg(BP, -.35, 0)) + ')'; cx.fillRect(0, 0, W, H); }
     } },
     { n: 'ESTRELLA', d: 4.0, dark: true, hit: [0, 1, 2, 3], f: function (u) {
       var k = Math.min(3, Math.floor(u)), lu = u - k, port = H > W;
@@ -559,14 +594,25 @@
     cx.textAlign = 'left'; cx.fillText(SC[i].n, m + 22 * S, H - m - 6 * S);
   }
 
+  var XF = .5;
+  function segOf(tv) { for (var i = 0; i < CUT.length; i++) if (tv < CUT[i][1] || i === CUT.length - 1) return i; return 0; }
+  function drawScene(si, u) {
+    var sc = SC[si], push = 1 + .022 * eio(seg(u, 0, Math.max(1.5, sc.d || 3)));
+    cx.save(); cx.translate(W / 2, H / 2); cx.scale(push, push); cx.translate(-W / 2, -H / 2); sc.f(u); cx.restore();
+  }
   function render(t) {
-    var L = locate(t), i = L[0], s = SC[i], u = L[1], sh = reduce ? 0 : shakeAmt(t); BP = t / BEAT - PRE;
+    var L = locate(t), i = L[0], s = SC[i], u = L[1], sh = 0; BP = t / BEAT - PRE;
     cx.setTransform(1, 0, 0, 1, 0, 0); cx.textAlign = 'left'; cx.globalAlpha = 1; cx.shadowBlur = 0; cx.globalCompositeOperation = 'source-over';
-    var punch = (1 + .05 * (1 - eo(seg(u, 0, .35)))) * (1 + (reduce ? 0 : pump(t)));
-    cx.save();
-    cx.translate(W / 2 + (rnd(Math.floor(t * 60)) - .5) * 22 * S * sh, H / 2 + (rnd(Math.floor(t * 60) + 7) - .5) * 22 * S * sh);
-    cx.scale(punch, punch); cx.translate(-W / 2, -H / 2);
-    s.f(u); cx.restore();
+    /* transición: disolvencia suave desde la escena anterior (sin golpes ni destellos) */
+    var sg = segOf(t), c0 = CUT[sg], xk = 1, prev = sg > 0 ? CUT[sg - 1] : null;
+    if (prev && prev[2] !== c0[2] && c0[2] !== 0 && !reduce) xk = eio(seg(t - c0[0], 0, XF)); else prev = null;
+    if (xk < 1) {
+      var uo = prev[4] + (t - c0[0]), BPs = BP;
+      if (buf.width !== W || buf.height !== H) { buf.width = W; buf.height = H; }
+      drawScene(prev[2], uo); bx.setTransform(1, 0, 0, 1, 0, 0); bx.clearRect(0, 0, W, H); bx.drawImage(cv, 0, 0);
+      cx.setTransform(1, 0, 0, 1, 0, 0); cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over'; cx.shadowBlur = 0; cx.textAlign = 'left';
+      drawScene(i, u); cx.setTransform(1, 0, 0, 1, 0, 0); cx.globalAlpha = 1 - xk; cx.drawImage(buf, 0, 0); cx.globalAlpha = 1;
+    } else drawScene(i, u);
     /* choque de color en cada golpe */
     if (sh > .25 && !reduce) {
       if (buf.width !== W || buf.height !== H) { buf.width = W; buf.height = H; }
@@ -584,7 +630,6 @@
     /* franjas de cine */
     var bh = H * .11 * bars(i, u); if (bh > .5) { cx.fillStyle = '#000'; cx.fillRect(0, 0, W, bh); cx.fillRect(0, H - bh, W, bh); }
     hud(i, t, s.dark);
-    if (i > 0 && t - SC[i].a < .03 && t >= SC[i].a) { cx.fillStyle = s.dark ? 'rgba(244,246,250,.45)' : 'rgba(5,7,12,.35)'; cx.fillRect(0, 0, W, H); }
     var on = s.n === 'JEEVES' && u > 3.0; if (on !== ctaOn) { ctaOn = on; box.classList.toggle('cta-on', on); cta.tabIndex = on ? 0 : -1; cta.setAttribute('aria-hidden', String(!on)); }
   }
   var ctaOn = null;
