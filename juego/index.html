@@ -6,6 +6,12 @@
 <title>Jeeves Express | La carrera de la hamburguesa</title>
 <meta name="description" content="Corre con Jeeves por la ciudad, esquiva el tráfico y entrega la hamburguesa antes que los demás.">
 <meta name="theme-color" content="#0B1230">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jeeves Express">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +63,8 @@
       </ul>
       <label class="nm">Tu nombre<input id="name" type="text" maxlength="12" autocomplete="off" placeholder="Jugador" inputmode="text"></label>
       <button class="btn" id="play" type="button">Jugar</button>
+      <button class="btn ghost" id="install" type="button" hidden>Instalar app en mi celular</button>
+      <p class="ios" id="iosHint" hidden>En iPhone: toca Compartir y luego "Agregar a inicio" para instalarla.</p>
       <div class="rec" id="recStart"></div>
     </div>
   </section>

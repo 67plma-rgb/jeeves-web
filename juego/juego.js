@@ -300,7 +300,7 @@
     segs.forEach(function (s) { s.spr.forEach(function (p) { if (p.kind === 'bolt') p.taken = false; }); });
     var R = mulberry(9);
     RIV.forEach(function (d, i) {
-      var r = mover({ kind: 'rival', z: PZ, off: LANE_X[d.lane], vx: 0, sp: 0, cruise: d.cr * MAXS, target: LANE_X[d.lane], lt: .2, hic: 5 + R() * 6, hicT: 0, ti: i, d: d, fin: false, finT: 0, ow: .34, w: 700 });
+      var r = mover({ kind: 'rival', z: PZ, off: LANE_X[d.lane], vx: 0, sp: 0, cruise: d.cr * MAXS, target: LANE_X[d.lane], lt: .2, hic: 5 + R() * 6, hicT: 0, ti: i, d: d, fin: false, finT: 0, ow: .28, w: 470 });
       rivals.push(r);
     });
     if (demo) rivals.forEach(function (r) { r.cruise = MAXS * .55; });
@@ -447,13 +447,13 @@
     for (i = 0; i < 3; i++) {
       s = segs[Math.min(segs.length - 1, seg.i + i)];
       for (j = 0; j < s.spr.length; j++) {
-        e = s.spr[j]; if (!e.hit || e.taken || Math.abs(zp - e.z) > SEG * 1.1 || Math.abs(ST.x - e.off) > (.3 + e.ow) / 2) continue;
+        e = s.spr[j]; if (!e.hit || e.taken || Math.abs(zp - e.z) > SEG * 1.1 || Math.abs(ST.x - e.off) > (.24 + e.ow) / 2) continue;
         if (e.kind === 'bolt') { e.taken = true; ST.bat = Math.min(1, ST.bat + .4); sfx('bolt'); toast('+ Turbo', 600); } else hitPlayer(e);
       }
       for (j = 0; j < s.dyn.length; j++) {
         e = s.dyn[j]; if (!e.hit || e.kind === 'rival') continue;
         if ((e.kind === 'cross' || e.kind === 'ped') && Math.abs(e.off) > 1.3) continue;
-        if (Math.abs(zp - e.z) < (e.kind === 'car' ? SEG * 1.2 : SEG * .9) && Math.abs(ST.x - e.off) < (.3 + e.ow) / 2) hitPlayer(e);
+        if (Math.abs(zp - e.z) < (e.kind === 'car' ? SEG * 1.2 : SEG * .9) && Math.abs(ST.x - e.off) < (.24 + e.ow) / 2) hitPlayer(e);
       }
     }
     if (zp >= FINISH && !ST.finished) finish();
@@ -546,7 +546,7 @@
         spriteDraw(tex, ex, ey, e.kind === 'rival' ? ew * .98 : ew, 0, s.clip, fade);
       }
     }
-    var spPct = ST.speed / MAXS, bob = Math.sin(tm * 38) * 1.6 * spPct * H / 700, pw = CAM_D / PZ * 700 * KX, py = HZ + KY + bob;
+    var spPct = ST.speed / MAXS, bob = Math.sin(tm * 38) * 1.6 * spPct * H / 700, pw = CAM_D / PZ * 470 * KX, py = HZ + KY + bob;
     if (!(ST.inv > 0 && Math.floor(tm * 16) % 2 === 0)) {
       if (ST.boost && ST.bat > 0 && ST.mode === 'race') { var fg = cx.createRadialGradient(W / 2, py - 6, 0, W / 2, py - 6, pw * 1.2); fg.addColorStop(0, 'rgba(69,237,209,.7)'); fg.addColorStop(1, 'rgba(69,237,209,0)'); cx.fillStyle = fg; cx.fillRect(W / 2 - pw * 1.3, py - pw, pw * 2.6, pw * 1.6); }
       cx.fillStyle = 'rgba(0,0,0,.4)'; cx.beginPath(); cx.ellipse(W / 2, py - 2, pw * .5, pw * .09, 0, 0, 7); cx.fill();
@@ -604,7 +604,16 @@
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) { engine(0, false); if (musicG && AC) musicG.gain.setTargetAtTime(0, AC.currentTime, .1); } else if (musicG && AC) musicG.gain.setTargetAtTime(ST.mode === 'menu' ? .32 : .22, AC.currentTime, .3); });
 
+  /* ---------- app instalable ---------- */
+  var deferred = null, btnInstall = $('#install'), iosHint = $('#iosHint');
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (btnInstall && !standalone) btnInstall.hidden = false; });
+  if (btnInstall) btnInstall.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btnInstall.hidden = true; }); });
+  window.addEventListener('appinstalled', function () { if (btnInstall) btnInstall.hidden = true; });
+  if (iosHint && !standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) iosHint.hidden = false;
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+
   build(); resetRace(true); resize(); paintRecords($('#recStart'));
-  window.__jx = { st: ST, segs: function () { return segs.length; }, finishNow: function () { ST.pos = FINISH - PZ - 600; ST.x = 0; ST.tx = 0; }, rivals: function () { return rivals; }, FINISH: FINISH, startRace: startRace };
+  window.__jx = { T: T, st: ST, segs: function () { return segs.length; }, finishNow: function () { ST.pos = FINISH - PZ - 600; ST.x = 0; ST.tx = 0; }, rivals: function () { return rivals; }, FINISH: FINISH, startRace: startRace };
   requestAnimationFrame(function (ts) { last = ts; loop(ts); });
 })();

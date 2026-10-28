@@ -80,3 +80,6 @@ svg{display:block}
 #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 @media (min-width:521px){#game{border-radius:28px;margin-top:0}}
 @media (prefers-reduced-motion:reduce){.card,.count b{animation:none}}
+
+.ios{margin:0;font-size:13px;color:var(--on-night-2);text-align:center}
+.btn[hidden],.ios[hidden]{display:none}
