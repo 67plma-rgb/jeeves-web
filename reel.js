@@ -301,7 +301,7 @@
         var ck = eo(seg(u, 3.0, 3.5)), bw = Math.min(W * .7, 420 * S), bh2 = 58 * S, bx2 = ox - bw / 2, by2 = Math.max(H * (H > W ? .8 : .78), ty0 + 74 * S);
         cx.globalAlpha = ck; rr(bx2, by2 + (1 - ck) * 20 * S, bw, bh2, bh2 / 2); cx.fillStyle = MINT; cx.fill();
         font('700', 21 * S, FT); cx.fillStyle = '#0F172A'; cx.textAlign = 'center'; cx.fillText('Cotiza por WhatsApp', ox, by2 + (1 - ck) * 20 * S + bh2 * .64);
-        font('600', 17 * S, FT); cx.fillStyle = 'rgba(244,246,250,.85)'; cx.fillText('+52 56 3642 2489', ox, by2 + bh2 + 40 * S); cx.textAlign = 'left'; cx.globalAlpha = 1;
+        font('600', 17 * S, FT); cx.fillStyle = 'rgba(244,246,250,.85)'; cx.fillText('+52 477 842 2891', ox, by2 + bh2 + 40 * S); cx.textAlign = 'left'; cx.globalAlpha = 1;
       }
     } },
     { n: 'FOTO', d: 4.0, dark: true, f: function (u) {

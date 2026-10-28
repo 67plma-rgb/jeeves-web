@@ -5,7 +5,7 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var WHATSAPP = '525636422489';
+  var WHATSAPP = '524778422891';
 
   /* ---------- Intro "Jeeves despierta" (una vez por visita) ---------- */
   function ready() { doc.classList.add('ready'); }

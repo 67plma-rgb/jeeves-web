@@ -3,7 +3,7 @@
    las respuestas salen de ahí y, si falla, vuelve al cerebro local. */
 (function () {
   'use strict';
-  var WA = '525636422489';
+  var WA = '524778422891';
   var LIMITE_MS = 6 * 60 * 1000, LIMITE_MSG = 25, MAX_CHARS = 280;
   var doc = document, root = doc.documentElement;
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,7 +185,7 @@
     [/instal|incluye|paquete|ruta/, function () { return 'El Paquete Ruta incluye el diseño de la ruta, la línea guía para 3 destinos, los códigos QR de respaldo y la calibración del robot en tu local. También te enseñamos a usar la app.'; }],
     [/soporte|garantia|falla|descompon|mantenimiento/, function () { return 'El Soporte Jeeves cuesta $995 MXN al año. Para una falla puntual, escríbenos por WhatsApp y te ayudamos.'; }],
     [/horario|hora atienden|abren|cuando atienden/, function () { return HORARIO; }],
-    [/contacto|whatsapp|correo|telefono|llamar|escribir/, function () { return 'Escríbenos por WhatsApp al +52 56 3642 2489. ' + HORARIO; }],
+    [/contacto|whatsapp|correo|telefono|llamar|escribir/, function () { return 'Escríbenos por WhatsApp al +52 477 842 2891. ' + HORARIO; }],
     [/ubicacion|donde estan|donde se ubican|sucursal|ciudad|cobertura|envian/, function () { return 'Visitamos tu local para medir y diseñar la ruta. Dime la dirección completa y vemos si podemos ir.'; }],
     [/gracias|perfecto|excelente|genial|ok gracias/, function () { return 'Con gusto. Si quieres, agendo la visita a tu local o te paso el WhatsApp.'; }]
   ];
@@ -241,7 +241,7 @@
       ctx.paso = 'inicio'; return { txt: 'Perfecto. ' + HORARIO + ' ¿Qué día te acomoda?' };
     }
     for (var i = 0; i < KB.length; i++) if (KB[i][0].test(t)) return { txt: KB[i][1](), chips: (i === 1 || i === 0) ? ['Sí, agendar visita', 'Cómo funciona'] : null };
-    return { txt: 'Eso lo ve mejor el equipo. Escríbenos por WhatsApp al +52 56 3642 2489 (' + HORARIO.toLowerCase().replace('atendemos y hacemos visitas de ', '').replace(/\.$/, '') + '). También te puedo contar de precios, cómo funciona o agendar una visita.', chips: ['Precios', 'Cómo funciona', 'Agendar visita'] };
+    return { txt: 'Eso lo ve mejor el equipo. Escríbenos por WhatsApp al +52 477 842 2891 (' + HORARIO.toLowerCase().replace('atendemos y hacemos visitas de ', '').replace(/\.$/, '') + '). También te puedo contar de precios, cómo funciona o agendar una visita.', chips: ['Precios', 'Cómo funciona', 'Agendar visita'] };
   }
   function resumenVisita() {
     var texto = 'Hola, quiero confirmar una visita de Jeeves.\nNombre: ' + ctx.nombre + '\nNegocio: ' + (ctx.negocio || 'por definir') + '\nDía y hora: ' + ctx.dia + ' a las ' + ctx.hora + '\nDirección: ' + ctx.dir;
