@@ -1,0 +1,27 @@
+:root{--ink:#0F172A;--ink-2:#3B4457;--ink-3:#6B7385;--porcelain:#EEEDEC;--paper:#fff;--mint:#45EDD1;--blue:#2563EB;--line:rgba(15,23,42,.1);--night:#0B0F17;--on-night:#F2F4F8;--on-night-2:#A3ADBF;
+  --f-display:"Inter Tight","Inter Display",Inter,system-ui,sans-serif;--f-text:Inter,system-ui,-apple-system,sans-serif}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--porcelain);color:var(--ink);font:400 17px/1.65 var(--f-text);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:4px}
+.bar{position:sticky;top:0;z-index:2;background:rgba(238,237,236,.85);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.bar div{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bar .brand{font:700 18px/1 var(--f-display);letter-spacing:-.02em;color:var(--ink);text-decoration:none}
+.bar .brand em{font-style:normal;font-weight:500;color:var(--ink-3);margin-left:4px}
+.bar .back{font:600 14px/1 var(--f-text);color:var(--ink);text-decoration:none;padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:var(--paper)}
+main{max-width:760px;margin:0 auto;padding:44px 20px 72px}
+h1{margin:0 0 6px;font:700 clamp(34px,8vw,52px)/1.02 var(--f-display);letter-spacing:-.04em}
+.upd{margin:0 0 28px;color:var(--ink-3);font-size:14px}
+.intro{font-size:19px;line-height:1.5;color:var(--ink-2);margin:0 0 8px}
+h2{margin:38px 0 8px;font:700 22px/1.2 var(--f-display);letter-spacing:-.02em}
+p,li{color:var(--ink-2)}
+p{margin:0 0 14px}
+ul{margin:0 0 14px;padding-left:22px}
+li{margin:0 0 6px}
+b{color:var(--ink);font-weight:600}
+.box{margin:30px 0 0;padding:20px 22px;border-radius:20px;background:var(--paper);border:1px solid var(--line)}
+.box p:last-child{margin:0}
+.btn{display:inline-block;margin-top:8px;padding:14px 24px;border-radius:999px;background:#45EDD1;color:#0F172A;font-weight:700;text-decoration:none}
+footer{border-top:1px solid var(--line);padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;font-size:14px;color:var(--ink-3)}
+footer a{color:var(--ink-2);margin:0 10px}
