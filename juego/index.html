@@ -2,85 +2,12 @@
 <html lang="es-MX">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<title>Jeeves Express | La carrera de la hamburguesa</title>
-<meta name="description" content="Corre con Jeeves por la ciudad, esquiva el tráfico y entrega la hamburguesa antes que los demás.">
-<meta name="theme-color" content="#0B1230">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Jeeves Express">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jeeves Express</title>
+<meta http-equiv="refresh" content="0;url=https://67plma-rgb.github.io/jeeves-express/">
+<link rel="canonical" href="https://67plma-rgb.github.io/jeeves-express/">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="juego.css">
+<style>html,body{margin:0;height:100%;background:#0B1230;color:#F2F4F8;font:16px/1.5 system-ui,sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px}a{display:inline-block;margin-top:14px;padding:16px 28px;border-radius:999px;background:#45EDD1;color:#0F172A;font-weight:700;text-decoration:none}</style>
 </head>
-<body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="i-burger" viewBox="0 0 32 32"><path d="M5 14c0-5.5 4.9-9 11-9s11 3.500 11 9z" fill="currentColor"/><rect x="4" y="16" width="24" height="3" rx="1.500" fill="currentColor" opacity=".7"/><path d="M5 21h22v1.500c0 2.500-2 4.500-4.500 4.500h-13C7 27 5 25 5 22.500z" fill="currentColor"/></symbol>
-    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4m0 1h12l-2 4 2 4H6" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 14h6l-1 8 8-12h-6z" fill="currentColor"/></symbol>
-    <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linejoin="round"/><path d="M16.500 9a4 4 0 0 1 0 6M19 6.500a7.500 7.500 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/></symbol>
-    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linejoin="round"/><path d="M17 9.500l4 5M21 9.500l-4 5" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/></symbol>
-    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  </defs>
-</svg>
-
-<main id="game" aria-label="Jeeves Express">
-  <canvas id="cv" aria-label="Pista de la carrera"></canvas>
-
-  <div id="hud" hidden>
-    <div class="hud-top">
-      <div class="rank"><b id="rank">1</b><span>de 4</span></div>
-      <div class="clock" id="clock" aria-live="off">0:00.0</div>
-      <button class="ico" id="mute" type="button" aria-label="Silenciar"><svg><use href="#i-vol"/></svg></button>
-    </div>
-    <div class="lives" id="lives" aria-label="Hamburguesa"><svg class="on"><use href="#i-burger"/></svg><svg class="on"><use href="#i-burger"/></svg><svg class="on"><use href="#i-burger"/></svg></div>
-    <div class="track" aria-hidden="true">
-      <i class="dot r1"></i><i class="dot r2"></i><i class="dot r3"></i><i class="dot me"></i>
-      <svg class="goal"><use href="#i-flag"/></svg>
-    </div>
-    <div class="toast" id="toast" role="status"></div>
-    <button class="turbo" id="turbo" type="button" aria-label="Turbo, mantén presionado"><svg><use href="#i-bolt"/></svg><span>Turbo</span><em id="bat"></em></button>
-    <div class="hint" id="hint">Arrastra el dedo para esquivar</div>
-  </div>
-
-  <div class="count" id="count" aria-live="assertive"></div>
-
-  <section class="scr" id="scrStart" aria-labelledby="t1">
-    <a class="back" href="../" aria-label="Volver al sitio"><svg><use href="#i-back"/></svg>Jeeves Robotics</a>
-    <div class="card">
-      <h1 id="t1">Jeeves Express</h1>
-      <p class="lead">Lleva la hamburguesa al otro lado de la ciudad antes que los demás.</p>
-      <ul class="how">
-        <li><b>Arrastra</b> el dedo para esquivar autos, conos y peatones.</li>
-        <li>Mantén <b>Turbo</b> para ir más rápido. Se recarga con los rayos.</li>
-        <li>Cada choque frena a Jeeves y se come un pedazo de tu hamburguesa.</li>
-      </ul>
-      <label class="nm">Tu nombre<input id="name" type="text" maxlength="12" autocomplete="off" placeholder="Jugador" inputmode="text"></label>
-      <button class="btn" id="play" type="button">Jugar</button>
-      <button class="btn ghost" id="install" type="button" hidden>Instalar app en mi celular</button>
-      <p class="ios" id="iosHint" hidden>En iPhone: toca Compartir y luego "Agregar a inicio" para instalarla.</p>
-      <div class="rec" id="recStart"></div>
-    </div>
-  </section>
-
-  <section class="scr" id="scrEnd" hidden aria-labelledby="t2">
-    <div class="card">
-      <h2 id="t2">Llegaste</h2>
-      <p class="lead" id="endLead"></p>
-      <ol class="podium" id="podium"></ol>
-      <button class="btn" id="again" type="button">Otra carrera</button>
-      <a class="btn ghost" href="../">Ver a Jeeves</a>
-      <div class="rec" id="recEnd"></div>
-    </div>
-    <canvas id="fx" aria-hidden="true"></canvas>
-  </section>
-</main>
-<script src="juego.js"></script>
-</body>
+<body><main><h1 style="margin:0">Jeeves Express</h1><p>El juego ahora tiene su propio link.</p><a href="https://67plma-rgb.github.io/jeeves-express/">Jugar</a></main></body>
 </html>
